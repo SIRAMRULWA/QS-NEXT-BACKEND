@@ -1,4 +1,21 @@
 package za.co.qsnext.employeemanagement.notification;
 
-public class NotificationRepository {
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+import java.util.UUID;
+
+public interface NotificationRepository
+        extends JpaRepository<Notification, UUID> {
+
+    Page<Notification> findByUserIdOrderByCreatedAtDesc(
+            UUID userId,
+            Pageable pageable
+    );
+
+    Page<Notification> findByUserIdAndReadFalseOrderByCreatedAtDesc(
+            UUID userId,
+            Pageable pageable
+    );
 }
