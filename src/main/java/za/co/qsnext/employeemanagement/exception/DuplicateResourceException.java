@@ -1,4 +1,8 @@
 package za.co.qsnext.employeemanagement.exception;
 
-public class DuplicateResourceException {
+public class DuplicateResourceException extends RuntimeException {
+
+    public DuplicateResourceException(String message) {
+        super(message);
+    }
 }
