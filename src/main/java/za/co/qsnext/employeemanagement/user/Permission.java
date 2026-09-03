@@ -15,10 +15,18 @@ public class Permission {
     @Column(name = "id", nullable = false, updatable = false)
     private UUID id;
 
-    @Column(name = "name", nullable = false, unique = true, length = 100)
+    @Column(
+            name = "name",
+            nullable = false,
+            unique = true,
+            length = 100
+    )
     private String name;
 
-    @Column(name = "description", length = 255)
+    @Column(
+            name = "description",
+            length = 255
+    )
     private String description;
 
     protected Permission() {

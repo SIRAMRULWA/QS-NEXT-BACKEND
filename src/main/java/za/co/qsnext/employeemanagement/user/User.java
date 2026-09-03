@@ -2,6 +2,7 @@ package za.co.qsnext.employeemanagement.user;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
@@ -16,26 +17,51 @@ import java.util.UUID;
 public class User {
 
     @Id
+    @GeneratedValue
     @UuidGenerator
     @Column(name = "id", nullable = false, updatable = false)
     private UUID id;
 
-    @Column(name = "username", nullable = false, unique = true, length = 100)
+    @Column(
+            name = "username",
+            nullable = false,
+            unique = true,
+            length = 100
+    )
     private String username;
 
-    @Column(name = "email", nullable = false, unique = true, length = 255)
+    @Column(
+            name = "email",
+            nullable = false,
+            unique = true,
+            length = 255
+    )
     private String email;
 
-    @Column(name = "password_hash", nullable = false, length = 255)
+    @Column(
+            name = "password_hash",
+            nullable = false,
+            length = 255
+    )
     private String passwordHash;
 
-    @Column(name = "enabled", nullable = false)
+    @Column(
+            name = "enabled",
+            nullable = false
+    )
     private boolean enabled = true;
 
-    @Column(name = "created_at", nullable = false, updatable = false)
+    @Column(
+            name = "created_at",
+            nullable = false,
+            updatable = false
+    )
     private OffsetDateTime createdAt;
 
-    @Column(name = "updated_at", nullable = false)
+    @Column(
+            name = "updated_at",
+            nullable = false
+    )
     private OffsetDateTime updatedAt;
 
     protected User() {
@@ -56,13 +82,13 @@ public class User {
     @PrePersist
     protected void onCreate() {
         OffsetDateTime now = OffsetDateTime.now();
-        this.createdAt = now;
-        this.updatedAt = now;
+        createdAt = now;
+        updatedAt = now;
     }
 
     @PreUpdate
     protected void onUpdate() {
-        this.updatedAt = OffsetDateTime.now();
+        updatedAt = OffsetDateTime.now();
     }
 
     public UUID getId() {
