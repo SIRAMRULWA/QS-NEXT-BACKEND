@@ -3,7 +3,9 @@ package za.co.qsnext.employeemanagement.department;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+
 import za.co.qsnext.employeemanagement.department.dto.CreateDepartmentRequest;
 import za.co.qsnext.employeemanagement.department.dto.DepartmentResponse;
 import za.co.qsnext.employeemanagement.department.dto.UpdateDepartmentRequest;
@@ -22,6 +24,7 @@ public class DepartmentController {
         this.departmentService = departmentService;
     }
 
+    @PreAuthorize("hasAuthority('DEPARTMENT_READ')")
     @GetMapping("/{departmentId}")
     public ResponseEntity<DepartmentResponse> getById(
             @PathVariable UUID departmentId
@@ -35,6 +38,7 @@ public class DepartmentController {
         );
     }
 
+    @PreAuthorize("hasAuthority('DEPARTMENT_CREATE')")
     @PostMapping
     public ResponseEntity<DepartmentResponse> create(
             @Valid @RequestBody CreateDepartmentRequest request
@@ -53,6 +57,7 @@ public class DepartmentController {
                 );
     }
 
+    @PreAuthorize("hasAuthority('DEPARTMENT_UPDATE')")
     @PutMapping("/{departmentId}")
     public ResponseEntity<DepartmentResponse> update(
             @PathVariable UUID departmentId,
@@ -71,6 +76,7 @@ public class DepartmentController {
         );
     }
 
+    @PreAuthorize("hasAuthority('DEPARTMENT_DELETE')")
     @DeleteMapping("/{departmentId}")
     public ResponseEntity<Void> delete(
             @PathVariable UUID departmentId

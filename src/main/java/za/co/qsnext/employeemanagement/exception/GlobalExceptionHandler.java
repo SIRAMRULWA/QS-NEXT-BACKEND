@@ -84,7 +84,7 @@ public class GlobalExceptionHandler {
             HttpServletRequest request
     ) {
         return buildResponse(
-                HttpStatus.UNPROCESSABLE_ENTITY,
+                HttpStatus.UNPROCESSABLE_CONTENT,
                 "BUSINESS_RULE_VIOLATION",
                 exception.getMessage(),
                 request.getRequestURI()

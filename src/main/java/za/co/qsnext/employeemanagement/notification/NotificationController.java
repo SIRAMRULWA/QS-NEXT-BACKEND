@@ -5,6 +5,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import za.co.qsnext.employeemanagement.notification.dto.NotificationResponse;
@@ -23,6 +24,7 @@ public class NotificationController {
         this.notificationService = notificationService;
     }
 
+    @PreAuthorize("hasAuthority('NOTIFICATION_READ')")
     @GetMapping("/user/{userId}")
     public ResponseEntity<Page<NotificationResponse>> getByUser(
             @PathVariable UUID userId,
@@ -40,6 +42,7 @@ public class NotificationController {
         );
     }
 
+    @PreAuthorize("hasAuthority('NOTIFICATION_READ')")
     @GetMapping("/user/{userId}/unread")
     public ResponseEntity<Page<NotificationResponse>> getUnread(
             @PathVariable UUID userId,
@@ -57,6 +60,7 @@ public class NotificationController {
         );
     }
 
+    @PreAuthorize("hasAuthority('NOTIFICATION_MARK_READ')")
     @PatchMapping("/{notificationId}/read")
     public ResponseEntity<NotificationResponse> markAsRead(
             @PathVariable UUID notificationId
@@ -69,6 +73,7 @@ public class NotificationController {
         );
     }
 
+    @PreAuthorize("hasAuthority('NOTIFICATION_MARK_UNREAD')")
     @PatchMapping("/{notificationId}/unread")
     public ResponseEntity<NotificationResponse> markAsUnread(
             @PathVariable UUID notificationId

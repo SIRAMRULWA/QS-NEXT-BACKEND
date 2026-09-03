@@ -7,7 +7,9 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+
 import za.co.qsnext.employeemanagement.leave.dto.CreateLeaveRequest;
 import za.co.qsnext.employeemanagement.leave.dto.LeaveApprovalRequest;
 import za.co.qsnext.employeemanagement.leave.dto.LeaveResponse;
@@ -24,6 +26,7 @@ public class LeaveController {
         this.leaveService = leaveService;
     }
 
+    @PreAuthorize("hasAuthority('LEAVE_READ')")
     @GetMapping("/{leaveRequestId}")
     public ResponseEntity<LeaveResponse> getById(
             @PathVariable UUID leaveRequestId
@@ -36,6 +39,7 @@ public class LeaveController {
         );
     }
 
+    @PreAuthorize("hasAuthority('LEAVE_READ')")
     @GetMapping("/employee/{employeeId}")
     public ResponseEntity<Page<LeaveResponse>> getByEmployee(
             @PathVariable UUID employeeId,
@@ -52,6 +56,7 @@ public class LeaveController {
         );
     }
 
+    @PreAuthorize("hasAuthority('LEAVE_READ')")
     @GetMapping("/status/{status}")
     public ResponseEntity<Page<LeaveResponse>> getByStatus(
             @PathVariable String status,
@@ -68,6 +73,7 @@ public class LeaveController {
         );
     }
 
+    @PreAuthorize("hasAuthority('LEAVE_CREATE')")
     @PostMapping
     public ResponseEntity<LeaveResponse> create(
             @Valid @RequestBody CreateLeaveRequest request
@@ -89,6 +95,7 @@ public class LeaveController {
                 );
     }
 
+    @PreAuthorize("hasAuthority('LEAVE_APPROVE')")
     @PostMapping("/{leaveRequestId}/approve")
     public ResponseEntity<LeaveResponse> approve(
             @PathVariable UUID leaveRequestId,
@@ -106,6 +113,7 @@ public class LeaveController {
         );
     }
 
+    @PreAuthorize("hasAuthority('LEAVE_REJECT')")
     @PostMapping("/{leaveRequestId}/reject")
     public ResponseEntity<LeaveResponse> reject(
             @PathVariable UUID leaveRequestId
@@ -118,6 +126,7 @@ public class LeaveController {
         );
     }
 
+    @PreAuthorize("hasAuthority('LEAVE_CANCEL')")
     @PostMapping("/{leaveRequestId}/cancel")
     public ResponseEntity<LeaveResponse> cancel(
             @PathVariable UUID leaveRequestId

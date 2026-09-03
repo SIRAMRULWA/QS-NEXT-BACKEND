@@ -1,12 +1,12 @@
 package za.co.qsnext.employeemanagement.reporting;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import za.co.qsnext.employeemanagement.reporting.dto.AttendanceReportResponse;
 import za.co.qsnext.employeemanagement.reporting.dto.EmployeeReportResponse;
 import za.co.qsnext.employeemanagement.reporting.dto.LeaveReportResponse;
 
-import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -21,6 +21,7 @@ public class ReportController {
         this.reportService = reportService;
     }
 
+    @PreAuthorize("hasAuthority('REPORT_READ')")
     @GetMapping("/employees/{employeeId}")
     public ResponseEntity<EmployeeReportResponse> getEmployeeReport(
             @PathVariable UUID employeeId
@@ -33,6 +34,7 @@ public class ReportController {
         );
     }
 
+    @PreAuthorize("hasAuthority('REPORT_READ')")
     @GetMapping("/leave/{employeeId}")
     public ResponseEntity<LeaveReportResponse> getLeaveReport(
             @PathVariable UUID employeeId,
@@ -47,6 +49,7 @@ public class ReportController {
         );
     }
 
+    @PreAuthorize("hasAuthority('REPORT_READ')")
     @GetMapping("/attendance/{employeeId}")
     public ResponseEntity<AttendanceReportResponse> getAttendanceReport(
             @PathVariable UUID employeeId,

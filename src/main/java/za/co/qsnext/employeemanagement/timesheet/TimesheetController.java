@@ -3,6 +3,7 @@ package za.co.qsnext.employeemanagement.timesheet;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import za.co.qsnext.employeemanagement.timesheet.dto.*;
 
@@ -20,6 +21,7 @@ public class TimesheetController {
         this.timesheetService = timesheetService;
     }
 
+    @PreAuthorize("hasAuthority('TIMESHEET_READ')")
     @GetMapping("/{timesheetId}")
     public ResponseEntity<TimesheetResponse> getById(
             @PathVariable UUID timesheetId
@@ -32,6 +34,7 @@ public class TimesheetController {
         );
     }
 
+    @PreAuthorize("hasAuthority('TIMESHEET_CREATE')")
     @PostMapping
     public ResponseEntity<TimesheetResponse> create(
             @Valid @RequestBody CreateTimesheetRequest request
@@ -51,6 +54,7 @@ public class TimesheetController {
                 );
     }
 
+    @PreAuthorize("hasAuthority('TIMESHEET_ENTRY_CREATE')")
     @PostMapping("/{timesheetId}/entries")
     public ResponseEntity<Void> addEntry(
             @PathVariable UUID timesheetId,
@@ -69,6 +73,7 @@ public class TimesheetController {
                 .build();
     }
 
+    @PreAuthorize("hasAuthority('TIMESHEET_SUBMIT')")
     @PostMapping("/{timesheetId}/submit")
     public ResponseEntity<TimesheetResponse> submit(
             @PathVariable UUID timesheetId
@@ -81,6 +86,7 @@ public class TimesheetController {
         );
     }
 
+    @PreAuthorize("hasAuthority('TIMESHEET_APPROVE')")
     @PostMapping("/{timesheetId}/approve")
     public ResponseEntity<TimesheetResponse> approve(
             @PathVariable UUID timesheetId,
@@ -97,6 +103,7 @@ public class TimesheetController {
         );
     }
 
+    @PreAuthorize("hasAuthority('TIMESHEET_REJECT')")
     @PostMapping("/{timesheetId}/reject")
     public ResponseEntity<TimesheetResponse> reject(
             @PathVariable UUID timesheetId
@@ -109,6 +116,7 @@ public class TimesheetController {
         );
     }
 
+    @PreAuthorize("hasAuthority('TIMESHEET_ENTRY_DELETE')")
     @DeleteMapping("/entries/{entryId}")
     public ResponseEntity<Void> deleteEntry(
             @PathVariable UUID entryId
