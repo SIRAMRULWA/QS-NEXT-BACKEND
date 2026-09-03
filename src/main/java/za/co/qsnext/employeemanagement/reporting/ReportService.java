@@ -1,9 +1,9 @@
 package za.co.qsnext.employeemanagement.reporting;
 
-import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
 import za.co.qsnext.employeemanagement.attendance.Attendance;
 import za.co.qsnext.employeemanagement.attendance.AttendanceRepository;
 import za.co.qsnext.employeemanagement.employee.Employee;
@@ -20,13 +20,22 @@ import java.util.List;
 import java.util.UUID;
 
 @Service
-@RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class ReportService {
 
     private final EmployeeRepository employeeRepository;
     private final LeaveRequestRepository leaveRequestRepository;
     private final AttendanceRepository attendanceRepository;
+
+    public ReportService(
+            EmployeeRepository employeeRepository,
+            LeaveRequestRepository leaveRequestRepository,
+            AttendanceRepository attendanceRepository
+    ) {
+        this.employeeRepository = employeeRepository;
+        this.leaveRequestRepository = leaveRequestRepository;
+        this.attendanceRepository = attendanceRepository;
+    }
 
     public EmployeeReportResponse getEmployeeReport(UUID employeeId) {
 
@@ -40,7 +49,10 @@ public class ReportService {
         return EmployeeReportResponse.from(employee);
     }
 
-    public LeaveReportResponse getLeaveReport(UUID employeeId, int year) {
+    public LeaveReportResponse getLeaveReport(
+            UUID employeeId,
+            int year
+    ) {
 
         verifyEmployeeExists(employeeId);
 
@@ -94,6 +106,7 @@ public class ReportService {
     private void verifyEmployeeExists(UUID employeeId) {
 
         if (!employeeRepository.existsById(employeeId)) {
+
             throw new EmployeeNotFoundException(
                     "Employee not found: " + employeeId
             );
