@@ -1,0 +1,8 @@
+ALTER TABLE attendance
+    ADD COLUMN version BIGINT NOT NULL DEFAULT 0;
+
+ALTER TABLE timesheets
+    ADD COLUMN version BIGINT NOT NULL DEFAULT 0;
+
+ALTER TABLE timesheet_entries
+    ADD COLUMN version BIGINT NOT NULL DEFAULT 0;

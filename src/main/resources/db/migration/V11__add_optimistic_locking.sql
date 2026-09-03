@@ -1,0 +1,8 @@
+ALTER TABLE employees
+    ADD COLUMN version BIGINT NOT NULL DEFAULT 0;
+
+ALTER TABLE leave_requests
+    ADD COLUMN version BIGINT NOT NULL DEFAULT 0;
+
+ALTER TABLE leave_balances
+    ADD COLUMN version BIGINT NOT NULL DEFAULT 0;
