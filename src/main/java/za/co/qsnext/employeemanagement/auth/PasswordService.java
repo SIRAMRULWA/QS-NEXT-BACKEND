@@ -8,7 +8,9 @@ public class PasswordService {
 
     private final PasswordEncoder passwordEncoder;
 
-    public PasswordService(PasswordEncoder passwordEncoder) {
+    public PasswordService(
+            PasswordEncoder passwordEncoder
+    ) {
         this.passwordEncoder = passwordEncoder;
     }
 
@@ -16,7 +18,13 @@ public class PasswordService {
         return passwordEncoder.encode(rawPassword);
     }
 
-    public boolean matches(String rawPassword, String encodedPassword) {
-        return passwordEncoder.matches(rawPassword, encodedPassword);
+    public boolean matches(
+            String rawPassword,
+            String encodedPassword
+    ) {
+        return passwordEncoder.matches(
+                rawPassword,
+                encodedPassword
+        );
     }
 }

@@ -2,7 +2,9 @@ package za.co.qsnext.employeemanagement.security;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.security.Keys;
+
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -13,6 +15,12 @@ import java.util.UUID;
 
 @Service
 public class JwtService {
+
+    private static final String TOKEN_TYPE_CLAIM = "tokenType";
+    private static final String USER_ID_CLAIM = "userId";
+
+    private static final String ACCESS_TOKEN = "access";
+    private static final String REFRESH_TOKEN = "refresh";
 
     private final SecretKey secretKey;
     private final long accessTokenExpiration;
@@ -28,8 +36,11 @@ public class JwtService {
                 secret.getBytes(StandardCharsets.UTF_8)
         );
 
-        this.accessTokenExpiration = accessTokenExpiration;
-        this.refreshTokenExpiration = refreshTokenExpiration;
+        this.accessTokenExpiration =
+                accessTokenExpiration;
+
+        this.refreshTokenExpiration =
+                refreshTokenExpiration;
     }
 
     public String generateAccessToken(
@@ -37,20 +48,12 @@ public class JwtService {
             String username
     ) {
 
-        Date now = new Date();
-
-        Date expiration = new Date(
-                now.getTime() + accessTokenExpiration
+        return generateToken(
+                userId,
+                username,
+                ACCESS_TOKEN,
+                accessTokenExpiration
         );
-
-        return Jwts.builder()
-                .subject(username)
-                .claim("userId", userId.toString())
-                .claim("tokenType", "access")
-                .issuedAt(now)
-                .expiration(expiration)
-                .signWith(secretKey)
-                .compact();
     }
 
     public String generateRefreshToken(
@@ -58,32 +61,32 @@ public class JwtService {
             String username
     ) {
 
-        Date now = new Date();
-
-        Date expiration = new Date(
-                now.getTime() + refreshTokenExpiration
+        return generateToken(
+                userId,
+                username,
+                REFRESH_TOKEN,
+                refreshTokenExpiration
         );
-
-        return Jwts.builder()
-                .subject(username)
-                .claim("userId", userId.toString())
-                .claim("tokenType", "refresh")
-                .issuedAt(now)
-                .expiration(expiration)
-                .signWith(secretKey)
-                .compact();
     }
 
-    public String extractUsername(String token) {
+    public String extractUsername(
+            String token
+    ) {
 
         return extractClaims(token)
                 .getSubject();
     }
 
-    public UUID extractUserId(String token) {
+    public UUID extractUserId(
+            String token
+    ) {
 
-        String userId = extractClaims(token)
-                .get("userId", String.class);
+        String userId =
+                extractClaims(token)
+                        .get(
+                                USER_ID_CLAIM,
+                                String.class
+                        );
 
         return UUID.fromString(userId);
     }
@@ -93,43 +96,32 @@ public class JwtService {
             String username
     ) {
 
-        Claims claims = extractClaims(token);
+        Claims claims =
+                extractClaims(token);
 
-        return claims.getSubject().equals(username)
+        return claims.getSubject()
+                .equals(username)
                 && !isExpired(claims);
     }
 
-    public boolean isAccessToken(String token) {
+    public boolean isAccessToken(
+            String token
+    ) {
 
-        Claims claims = extractClaims(token);
-
-        return "access".equals(
-                claims.get("tokenType", String.class)
+        return hasTokenType(
+                token,
+                ACCESS_TOKEN
         );
     }
 
-    public boolean isRefreshToken(String token) {
+    public boolean isRefreshToken(
+            String token
+    ) {
 
-        Claims claims = extractClaims(token);
-
-        return "refresh".equals(
-                claims.get("tokenType", String.class)
+        return hasTokenType(
+                token,
+                REFRESH_TOKEN
         );
-    }
-
-    private Claims extractClaims(String token) {
-
-        return Jwts.parser()
-                .verifyWith(secretKey)
-                .build()
-                .parseSignedClaims(token)
-                .getPayload();
-    }
-
-    private boolean isExpired(Claims claims) {
-
-        return claims.getExpiration()
-                .before(new Date());
     }
 
     public long getAccessTokenExpiration() {
@@ -138,5 +130,72 @@ public class JwtService {
 
     public long getRefreshTokenExpiration() {
         return refreshTokenExpiration;
+    }
+
+    private String generateToken(
+            UUID userId,
+            String username,
+            String tokenType,
+            long expirationMillis
+    ) {
+
+        Date now = new Date();
+
+        Date expiration =
+                new Date(
+                        now.getTime()
+                                + expirationMillis
+                );
+
+        return Jwts.builder()
+                .subject(username)
+                .claim(
+                        USER_ID_CLAIM,
+                        userId.toString()
+                )
+                .claim(
+                        TOKEN_TYPE_CLAIM,
+                        tokenType
+                )
+                .issuedAt(now)
+                .expiration(expiration)
+                .signWith(secretKey)
+                .compact();
+    }
+
+    private boolean hasTokenType(
+            String token,
+            String expectedType
+    ) {
+
+        Claims claims =
+                extractClaims(token);
+
+        return expectedType.equals(
+                claims.get(
+                        TOKEN_TYPE_CLAIM,
+                        String.class
+                )
+        );
+    }
+
+    private Claims extractClaims(
+            String token
+    ) {
+
+        return Jwts.parser()
+                .verifyWith(secretKey)
+                .build()
+                .parseSignedClaims(token)
+                .getPayload();
+    }
+
+    private boolean isExpired(
+            Claims claims
+    ) {
+
+        return claims
+                .getExpiration()
+                .before(new Date());
     }
 }

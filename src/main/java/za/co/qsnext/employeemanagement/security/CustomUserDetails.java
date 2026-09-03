@@ -2,6 +2,7 @@ package za.co.qsnext.employeemanagement.security;
 
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
+
 import za.co.qsnext.employeemanagement.user.User;
 
 import java.util.Collection;

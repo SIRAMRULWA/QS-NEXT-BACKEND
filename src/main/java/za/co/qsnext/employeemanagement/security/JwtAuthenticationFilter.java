@@ -42,6 +42,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         String authorizationHeader =
                 request.getHeader(AUTHORIZATION_HEADER);
 
+        /*
+         * No JWT provided.
+         *
+         * Continue the request.
+         * Spring Security will determine whether
+         * the endpoint requires authentication.
+         */
         if (authorizationHeader == null
                 || !authorizationHeader.startsWith(BEARER_PREFIX)) {
 
@@ -65,6 +72,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 UserDetails userDetails =
                         userDetailsService.loadUserByUsername(username);
 
+                /*
+                 * Only access tokens may authenticate
+                 * protected API requests.
+                 */
                 if (jwtService.isAccessToken(token)
                         && jwtService.isTokenValid(
                         token,
@@ -91,9 +102,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         } catch (JwtException | IllegalArgumentException ex) {
 
-            // Invalid JWT.
-            // Leave the request unauthenticated.
-            // Spring Security will reject protected endpoints with 401.
+            /*
+             * Invalid, expired or malformed JWT.
+             *
+             * Do not authenticate the request.
+             */
+            SecurityContextHolder.clearContext();
         }
 
         filterChain.doFilter(request, response);
