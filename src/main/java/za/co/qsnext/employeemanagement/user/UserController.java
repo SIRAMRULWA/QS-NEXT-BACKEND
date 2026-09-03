@@ -1,6 +1,7 @@
 package za.co.qsnext.employeemanagement.user;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import za.co.qsnext.employeemanagement.user.dto.UserResponse;
 
@@ -16,6 +17,7 @@ public class UserController {
         this.userService = userService;
     }
 
+    @PreAuthorize("hasAuthority('USER_READ')")
     @GetMapping("/{userId}")
     public ResponseEntity<UserResponse> getById(
             @PathVariable UUID userId
@@ -28,6 +30,7 @@ public class UserController {
         );
     }
 
+    @PreAuthorize("hasAuthority('USER_READ')")
     @GetMapping("/username/{username}")
     public ResponseEntity<UserResponse> getByUsername(
             @PathVariable String username
@@ -40,6 +43,7 @@ public class UserController {
         );
     }
 
+    @PreAuthorize("hasAuthority('USER_DISABLE')")
     @PatchMapping("/{userId}/disable")
     public ResponseEntity<Void> disable(
             @PathVariable UUID userId
@@ -50,6 +54,7 @@ public class UserController {
         return ResponseEntity.noContent().build();
     }
 
+    @PreAuthorize("hasAuthority('USER_ENABLE')")
     @PatchMapping("/{userId}/enable")
     public ResponseEntity<Void> enable(
             @PathVariable UUID userId

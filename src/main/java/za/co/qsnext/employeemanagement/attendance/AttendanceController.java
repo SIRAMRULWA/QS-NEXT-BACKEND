@@ -7,7 +7,9 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+
 import za.co.qsnext.employeemanagement.attendance.dto.AttendanceResponse;
 import za.co.qsnext.employeemanagement.attendance.dto.ClockInRequest;
 
@@ -26,6 +28,7 @@ public class AttendanceController {
         this.attendanceService = attendanceService;
     }
 
+    @PreAuthorize("hasAuthority('ATTENDANCE_READ')")
     @GetMapping("/{attendanceId}")
     public ResponseEntity<AttendanceResponse> getById(
             @PathVariable UUID attendanceId
@@ -38,6 +41,7 @@ public class AttendanceController {
         );
     }
 
+    @PreAuthorize("hasAuthority('ATTENDANCE_READ')")
     @GetMapping("/employee/{employeeId}")
     public ResponseEntity<Page<AttendanceResponse>> getByEmployee(
             @PathVariable UUID employeeId,
@@ -54,6 +58,7 @@ public class AttendanceController {
         );
     }
 
+    @PreAuthorize("hasAuthority('ATTENDANCE_CREATE')")
     @PostMapping
     public ResponseEntity<AttendanceResponse> create(
             @Valid @RequestBody ClockInRequest request
@@ -72,6 +77,7 @@ public class AttendanceController {
                 );
     }
 
+    @PreAuthorize("hasAuthority('ATTENDANCE_CLOCK_IN')")
     @PostMapping("/{attendanceId}/clock-in")
     public ResponseEntity<AttendanceResponse> clockIn(
             @PathVariable UUID attendanceId
@@ -86,6 +92,7 @@ public class AttendanceController {
         );
     }
 
+    @PreAuthorize("hasAuthority('ATTENDANCE_CLOCK_OUT')")
     @PostMapping("/{attendanceId}/clock-out")
     public ResponseEntity<AttendanceResponse> clockOut(
             @PathVariable UUID attendanceId
@@ -100,6 +107,7 @@ public class AttendanceController {
         );
     }
 
+    @PreAuthorize("hasAuthority('ATTENDANCE_MARK_ABSENT')")
     @PatchMapping("/{attendanceId}/absent")
     public ResponseEntity<AttendanceResponse> markAbsent(
             @PathVariable UUID attendanceId
@@ -114,6 +122,7 @@ public class AttendanceController {
         );
     }
 
+    @PreAuthorize("hasAuthority('ATTENDANCE_MARK_LATE')")
     @PatchMapping("/{attendanceId}/late")
     public ResponseEntity<AttendanceResponse> markLate(
             @PathVariable UUID attendanceId
@@ -128,6 +137,7 @@ public class AttendanceController {
         );
     }
 
+    @PreAuthorize("hasAuthority('ATTENDANCE_MARK_REMOTE')")
     @PatchMapping("/{attendanceId}/remote")
     public ResponseEntity<AttendanceResponse> markRemote(
             @PathVariable UUID attendanceId
@@ -142,6 +152,7 @@ public class AttendanceController {
         );
     }
 
+    @PreAuthorize("hasAuthority('ATTENDANCE_READ')")
     @GetMapping("/date/{date}")
     public ResponseEntity<Page<AttendanceResponse>> getByDate(
             @PathVariable LocalDate date,
