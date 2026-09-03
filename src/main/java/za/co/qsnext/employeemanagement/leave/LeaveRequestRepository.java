@@ -4,6 +4,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import java.time.LocalDate;
 import java.util.UUID;
 
 public interface LeaveRequestRepository
@@ -22,6 +23,13 @@ public interface LeaveRequestRepository
     Page<LeaveRequest> findByEmployeeIdAndStatus(
             UUID employeeId,
             String status,
+            Pageable pageable
+    );
+
+    Page<LeaveRequest> findByEmployeeIdAndStartDateLessThanEqualAndEndDateGreaterThanEqual(
+            UUID employeeId,
+            LocalDate endDate,
+            LocalDate startDate,
             Pageable pageable
     );
 }

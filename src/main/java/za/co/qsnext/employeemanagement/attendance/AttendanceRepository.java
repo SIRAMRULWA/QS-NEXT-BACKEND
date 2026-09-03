@@ -25,4 +25,11 @@ public interface AttendanceRepository
             LocalDate attendanceDate,
             Pageable pageable
     );
+
+    Page<Attendance> findByEmployeeIdAndAttendanceDateBetween(
+            UUID employeeId,
+            LocalDate startDate,
+            LocalDate endDate,
+            Pageable pageable
+    );
 }
