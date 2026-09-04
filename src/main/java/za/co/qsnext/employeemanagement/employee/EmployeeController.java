@@ -42,7 +42,10 @@ public class EmployeeController {
         return ResponseEntity.ok(response);
     }
 
-    @PreAuthorize("hasAuthority('EMPLOYEE_READ')")
+    @PreAuthorize(
+            "hasAuthority('EMPLOYEE_READ') and " +
+                    "@employeeAuthorizationService.canRead(#employeeId, authentication)"
+    )
     @GetMapping("/{employeeId}")
     public ResponseEntity<EmployeeResponse> getById(
             @PathVariable UUID employeeId
