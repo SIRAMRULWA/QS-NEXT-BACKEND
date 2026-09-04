@@ -14,7 +14,7 @@ import jakarta.persistence.Table;
 import org.hibernate.annotations.UuidGenerator;
 
 import java.time.OffsetDateTime;
-import java.util.Collections;
+import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
 
@@ -80,7 +80,7 @@ public class User {
             joinColumns = @JoinColumn(name = "user_id"),
             inverseJoinColumns = @JoinColumn(name = "role_id")
     )
-    private Set<Role> roles = Collections.emptySet();
+    private Set<Role> roles = new HashSet<>();
 
     protected User() {
         // Required by JPA
@@ -139,6 +139,10 @@ public class User {
 
     public Set<Role> getRoles() {
         return roles;
+    }
+
+    public void assignRole(Role role) {
+        roles.add(role);
     }
 
     public void changeEmail(String email) {

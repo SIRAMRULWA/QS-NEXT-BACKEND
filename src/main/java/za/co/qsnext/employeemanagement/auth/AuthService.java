@@ -17,6 +17,8 @@ import za.co.qsnext.employeemanagement.exception.DuplicateResourceException;
 import za.co.qsnext.employeemanagement.exception.UnauthorizedException;
 import za.co.qsnext.employeemanagement.security.CustomUserDetails;
 import za.co.qsnext.employeemanagement.security.JwtService;
+import za.co.qsnext.employeemanagement.user.Role;
+import za.co.qsnext.employeemanagement.user.RoleRepository;
 import za.co.qsnext.employeemanagement.user.User;
 import za.co.qsnext.employeemanagement.user.UserRepository;
 
@@ -25,19 +27,23 @@ import za.co.qsnext.employeemanagement.user.UserRepository;
 public class AuthService {
 
     private static final String TOKEN_TYPE = "Bearer";
+    private static final String DEFAULT_ROLE = "EMPLOYEE";
 
     private final UserRepository userRepository;
+    private final RoleRepository roleRepository;
     private final PasswordService passwordService;
     private final JwtService jwtService;
     private final AuthenticationManager authenticationManager;
 
     public AuthService(
             UserRepository userRepository,
+            RoleRepository roleRepository,
             PasswordService passwordService,
             JwtService jwtService,
             AuthenticationManager authenticationManager
     ) {
         this.userRepository = userRepository;
+        this.roleRepository = roleRepository;
         this.passwordService = passwordService;
         this.jwtService = jwtService;
         this.authenticationManager = authenticationManager;
@@ -104,6 +110,14 @@ public class AuthService {
             );
         }
 
+        Role employeeRole =
+                roleRepository.findByName(DEFAULT_ROLE)
+                        .orElseThrow(() ->
+                                new IllegalStateException(
+                                        "EMPLOYEE role is not configured"
+                                )
+                        );
+
         String passwordHash =
                 passwordService.encode(
                         request.password()
@@ -114,6 +128,8 @@ public class AuthService {
                 request.email(),
                 passwordHash
         );
+
+        user.assignRole(employeeRole);
 
         User savedUser =
                 userRepository.save(user);
