@@ -3,12 +3,8 @@ package za.co.qsnext.employeemanagement.rabbitmq;
 public final class RabbitMqConstants {
 
     private RabbitMqConstants() {
-        // Utility class
     }
 
-    /*
-     * Email messaging
-     */
     public static final String EMAIL_EXCHANGE =
             "qsnext.email.exchange";
 
@@ -18,15 +14,12 @@ public final class RabbitMqConstants {
     public static final String EMAIL_ROUTING_KEY =
             "email.send";
 
-    /*
-     * Dead Letter Queue
-     */
-    public static final String EMAIL_DLX =
+    public static final String EMAIL_DEAD_LETTER_EXCHANGE =
             "qsnext.email.dlx";
 
-    public static final String EMAIL_DLQ =
+    public static final String EMAIL_DEAD_LETTER_QUEUE =
             "qsnext.email.dlq";
 
-    public static final String EMAIL_DLQ_ROUTING_KEY =
+    public static final String EMAIL_DEAD_LETTER_ROUTING_KEY =
             "email.failed";
 }

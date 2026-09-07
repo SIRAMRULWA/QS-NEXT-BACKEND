@@ -13,9 +13,6 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class RabbitMqConfig {
 
-    /*
-     * Main email exchange.
-     */
     @Bean
     public DirectExchange emailExchange() {
 
@@ -24,23 +21,14 @@ public class RabbitMqConfig {
         );
     }
 
-    /*
-     * Dead Letter Exchange.
-     */
     @Bean
     public DirectExchange emailDeadLetterExchange() {
 
         return new DirectExchange(
-                RabbitMqConstants.EMAIL_DLX
+                RabbitMqConstants.EMAIL_DEAD_LETTER_EXCHANGE
         );
     }
 
-    /*
-     * Main email queue.
-     *
-     * Messages that cannot be processed successfully
-     * will eventually be routed to the Dead Letter Exchange.
-     */
     @Bean
     public Queue emailQueue() {
 
@@ -49,30 +37,24 @@ public class RabbitMqConfig {
                         RabbitMqConstants.EMAIL_QUEUE
                 )
                 .deadLetterExchange(
-                        RabbitMqConstants.EMAIL_DLX
+                        RabbitMqConstants.EMAIL_DEAD_LETTER_EXCHANGE
                 )
                 .deadLetterRoutingKey(
-                        RabbitMqConstants.EMAIL_DLQ_ROUTING_KEY
+                        RabbitMqConstants.EMAIL_DEAD_LETTER_ROUTING_KEY
                 )
                 .build();
     }
 
-    /*
-     * Dead Letter Queue.
-     */
     @Bean
     public Queue emailDeadLetterQueue() {
 
         return QueueBuilder
                 .durable(
-                        RabbitMqConstants.EMAIL_DLQ
+                        RabbitMqConstants.EMAIL_DEAD_LETTER_QUEUE
                 )
                 .build();
     }
 
-    /*
-     * Main exchange → email queue.
-     */
     @Bean
     public Binding emailQueueBinding(
             Queue emailQueue,
@@ -87,9 +69,6 @@ public class RabbitMqConfig {
                 );
     }
 
-    /*
-     * Dead Letter Exchange → Dead Letter Queue.
-     */
     @Bean
     public Binding emailDeadLetterQueueBinding(
             Queue emailDeadLetterQueue,
@@ -100,14 +79,10 @@ public class RabbitMqConfig {
                 .bind(emailDeadLetterQueue)
                 .to(emailDeadLetterExchange)
                 .with(
-                        RabbitMqConstants.EMAIL_DLQ_ROUTING_KEY
+                        RabbitMqConstants.EMAIL_DEAD_LETTER_ROUTING_KEY
                 );
     }
 
-    /*
-     * RabbitTemplate is used by the application
-     * to publish messages to RabbitMQ.
-     */
     @Bean
     public RabbitTemplate rabbitTemplate(
             ConnectionFactory connectionFactory
