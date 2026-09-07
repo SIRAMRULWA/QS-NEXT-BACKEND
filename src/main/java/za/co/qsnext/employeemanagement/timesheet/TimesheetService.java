@@ -4,8 +4,13 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import za.co.qsnext.employeemanagement.employee.Employee;
+import za.co.qsnext.employeemanagement.employee.EmployeeRepository;
 import za.co.qsnext.employeemanagement.employee.EmployeeService;
 import za.co.qsnext.employeemanagement.exception.BusinessRuleException;
+import za.co.qsnext.employeemanagement.exception.EmployeeNotFoundException;
+import za.co.qsnext.employeemanagement.timesheet.dto.TimesheetResponse;
 import za.co.qsnext.employeemanagement.user.UserService;
 
 import java.math.BigDecimal;
@@ -21,17 +26,20 @@ public class TimesheetService {
     private final TimesheetEntryRepository timesheetEntryRepository;
     private final EmployeeService employeeService;
     private final UserService userService;
+    private final EmployeeRepository employeeRepository;
 
     public TimesheetService(
             TimesheetRepository timesheetRepository,
             TimesheetEntryRepository timesheetEntryRepository,
             EmployeeService employeeService,
-            UserService userService
+            UserService userService,
+            EmployeeRepository employeeRepository
     ) {
         this.timesheetRepository = timesheetRepository;
         this.timesheetEntryRepository = timesheetEntryRepository;
         this.employeeService = employeeService;
         this.userService = userService;
+        this.employeeRepository = employeeRepository;
     }
 
     public Timesheet getById(UUID timesheetId) {
@@ -125,6 +133,12 @@ public class TimesheetService {
         if (!"DRAFT".equals(timesheet.getStatus())) {
             throw new BusinessRuleException(
                     "Entries can only be added to a draft timesheet"
+            );
+        }
+
+        if (workDate == null) {
+            throw new BusinessRuleException(
+                    "Work date is required"
             );
         }
 
@@ -289,6 +303,112 @@ public class TimesheetService {
         timesheet.reject();
 
         return timesheet;
+    }
+
+    /*
+     * ============================================================
+     * SELF-SERVICE TIMESHEET OPERATIONS
+     * ============================================================
+     */
+
+    @Transactional(readOnly = true)
+    public Page<Timesheet> getOwnTimesheets(
+            UUID userId,
+            Pageable pageable
+    ) {
+
+        Employee employee = employeeRepository
+                .findByUserId(userId)
+                .orElseThrow(() ->
+                        new EmployeeNotFoundException(
+                                "Employee profile not found"
+                        )
+                );
+
+        return timesheetRepository.findByEmployeeId(
+                employee.getId(),
+                pageable
+        );
+    }
+
+    @Transactional
+    public Timesheet createForUser(
+            UUID userId,
+            LocalDate periodStart,
+            LocalDate periodEnd
+    ) {
+
+        Employee employee = employeeRepository
+                .findByUserId(userId)
+                .orElseThrow(() ->
+                        new EmployeeNotFoundException(
+                                "Employee profile not found"
+                        )
+                );
+
+        return create(
+                employee.getId(),
+                periodStart,
+                periodEnd
+        );
+    }
+
+    @Transactional
+    public TimesheetEntry addEntryForUser(
+            UUID userId,
+            UUID timesheetId,
+            LocalDate workDate,
+            BigDecimal hoursWorked,
+            String description
+    ) {
+
+        Employee employee = employeeRepository
+                .findByUserId(userId)
+                .orElseThrow(() ->
+                        new EmployeeNotFoundException(
+                                "Employee profile not found"
+                        )
+                );
+
+        Timesheet timesheet = getById(timesheetId);
+
+        if (!employee.getId().equals(timesheet.getEmployeeId())) {
+            throw new BusinessRuleException(
+                    "You can only modify your own timesheets"
+            );
+        }
+
+        return addEntry(
+                timesheetId,
+                workDate,
+                hoursWorked,
+                description
+        );
+    }
+
+    @Transactional
+    public Timesheet submitForUser(
+            UUID userId,
+            UUID timesheetId
+    ) {
+
+        Employee employee = employeeRepository
+                .findByUserId(userId)
+                .orElseThrow(() ->
+                        new EmployeeNotFoundException(
+                                "Employee profile not found"
+                        )
+                );
+
+        Timesheet timesheet = getById(timesheetId);
+
+        if (!employee.getId().equals(timesheet.getEmployeeId())) {
+            throw new BusinessRuleException(
+                    "You can only submit your own timesheets"
+            );
+        }
+
+        return submit(timesheetId);
     }
 
     private void validatePeriod(
