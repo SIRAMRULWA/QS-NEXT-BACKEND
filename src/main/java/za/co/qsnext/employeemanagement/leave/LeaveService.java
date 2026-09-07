@@ -4,9 +4,13 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import za.co.qsnext.employeemanagement.employee.Employee;
+import za.co.qsnext.employeemanagement.employee.EmployeeRepository;
 import za.co.qsnext.employeemanagement.employee.EmployeeService;
 import za.co.qsnext.employeemanagement.exception.BusinessRuleException;
+import za.co.qsnext.employeemanagement.exception.EmployeeNotFoundException;
 import za.co.qsnext.employeemanagement.exception.LeaveRequestNotFoundException;
+import za.co.qsnext.employeemanagement.leave.dto.LeaveResponse;
 import za.co.qsnext.employeemanagement.user.UserService;
 
 import java.math.BigDecimal;
@@ -21,17 +25,19 @@ public class LeaveService {
     private final LeaveBalanceRepository leaveBalanceRepository;
     private final EmployeeService employeeService;
     private final UserService userService;
+    private final EmployeeRepository employeeRepository;
 
     public LeaveService(
             LeaveRequestRepository leaveRequestRepository,
             LeaveBalanceRepository leaveBalanceRepository,
             EmployeeService employeeService,
-            UserService userService
+            UserService userService, EmployeeRepository employeeRepository
     ) {
         this.leaveRequestRepository = leaveRequestRepository;
         this.leaveBalanceRepository = leaveBalanceRepository;
         this.employeeService = employeeService;
         this.userService = userService;
+        this.employeeRepository = employeeRepository;
     }
 
     public LeaveRequest getById(UUID leaveRequestId) {
@@ -231,5 +237,72 @@ public class LeaveService {
         return endDate.toEpochDay()
                 - startDate.toEpochDay()
                 + 1;
+    }
+
+    @Transactional(readOnly = true)
+    public Page<LeaveResponse> getOwnLeave(
+            UUID userId,
+            Pageable pageable
+    ) {
+        Employee employee = employeeRepository
+                .findByUserId(userId)
+                .orElseThrow(() ->
+                        new EmployeeNotFoundException(
+                                "Employee profile not found"
+                        )
+                );
+
+        return leaveRequestRepository
+                .findByEmployeeId(
+                        employee.getId(),
+                        pageable
+                )
+                .map(LeaveResponse::from);
+    }
+
+    @Transactional
+    public LeaveBalance createBalance(
+            UUID employeeId,
+            String leaveType,
+            Integer leaveYear,
+            BigDecimal allocatedDays
+    ) {
+
+        employeeService.getById(employeeId);
+
+        if (leaveYear == null) {
+            throw new BusinessRuleException(
+                    "Leave year is required"
+            );
+        }
+
+        if (allocatedDays == null
+                || allocatedDays.compareTo(BigDecimal.ZERO) < 0) {
+            throw new BusinessRuleException(
+                    "Allocated leave days cannot be negative"
+            );
+        }
+
+        if (leaveBalanceRepository
+                .findByEmployeeIdAndLeaveTypeAndLeaveYear(
+                        employeeId,
+                        leaveType,
+                        leaveYear
+                )
+                .isPresent()) {
+
+            throw new BusinessRuleException(
+                    "Leave balance already exists for employee, leave type and year"
+            );
+        }
+
+        return leaveBalanceRepository.save(
+                new LeaveBalance(
+                        employeeId,
+                        leaveType,
+                        leaveYear,
+                        allocatedDays
+                )
+        );
     }
 }
