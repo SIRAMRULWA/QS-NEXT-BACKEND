@@ -80,6 +80,19 @@ public class GlobalExceptionHandler {
         );
     }
 
+    @ExceptionHandler(TimesheetNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleTimesheetNotFound(
+            TimesheetNotFoundException exception,
+            HttpServletRequest request
+    ) {
+        return buildResponse(
+                HttpStatus.NOT_FOUND,
+                "TIMESHEET_NOT_FOUND",
+                exception.getMessage(),
+                request.getRequestURI()
+        );
+    }
+
     @ExceptionHandler(DuplicateResourceException.class)
     public ResponseEntity<ErrorResponse> handleDuplicateResource(
             DuplicateResourceException exception,
@@ -120,8 +133,9 @@ public class GlobalExceptionHandler {
     }
 
     /**
-     * Handles authorization failures from method-level security,
-     * for example:
+     * Handles authorization failures from method-level security.
+     *
+     * For example:
      *
      * @PreAuthorize("hasAuthority('EMPLOYEE_CREATE')")
      *
@@ -181,9 +195,7 @@ public class GlobalExceptionHandler {
     /**
      * Catch-all handler.
      *
-     * This must remain after the more specific exception handlers.
-     * AccessDeniedException has its own handler above, so it will
-     * no longer incorrectly become a 500 response.
+     * This remains after the more specific handlers.
      */
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleUnexpectedException(

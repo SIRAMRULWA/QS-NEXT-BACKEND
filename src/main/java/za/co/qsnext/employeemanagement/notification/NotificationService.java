@@ -5,11 +5,9 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import za.co.qsnext.employeemanagement.exception.BusinessRuleException;
 import za.co.qsnext.employeemanagement.exception.NotificationNotFoundException;
 import za.co.qsnext.employeemanagement.exception.UserNotFoundException;
 import za.co.qsnext.employeemanagement.notification.dto.NotificationResponse;
-import za.co.qsnext.employeemanagement.user.User;
 import za.co.qsnext.employeemanagement.user.UserRepository;
 
 import java.util.UUID;

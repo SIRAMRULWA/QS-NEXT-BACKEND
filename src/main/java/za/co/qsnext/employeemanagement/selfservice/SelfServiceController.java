@@ -1,5 +1,11 @@
 package za.co.qsnext.employeemanagement.selfservice;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+
 import jakarta.validation.Valid;
 
 import org.springframework.data.domain.Page;
@@ -19,11 +25,13 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import za.co.qsnext.employeemanagement.attendance.dto.AttendanceResponse;
+import za.co.qsnext.employeemanagement.exception.ErrorResponse;
 import za.co.qsnext.employeemanagement.leave.dto.LeaveResponse;
 import za.co.qsnext.employeemanagement.security.CustomUserDetails;
 import za.co.qsnext.employeemanagement.selfservice.dto.SelfServiceProfileResponse;
+import za.co.qsnext.employeemanagement.timesheet.dto.CreateSelfServiceTimesheetRequest;
 import za.co.qsnext.employeemanagement.timesheet.dto.CreateTimesheetEntryRequest;
-import za.co.qsnext.employeemanagement.timesheet.dto.CreateSelfServiceTimesheetRequest;import za.co.qsnext.employeemanagement.timesheet.dto.TimesheetResponse;
+import za.co.qsnext.employeemanagement.timesheet.dto.TimesheetResponse;
 
 import java.util.UUID;
 
@@ -45,6 +53,43 @@ public class SelfServiceController {
      * ============================================================
      */
 
+    @Operation(
+            summary = "Get own employee profile",
+            description = "Returns the employee profile belonging to the authenticated user."
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Profile retrieved successfully"
+            ),
+            @ApiResponse(
+                    responseCode = "401",
+                    description = "Authentication required",
+                    content = @Content(
+                            schema = @Schema(
+                                    implementation = ErrorResponse.class
+                            )
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "403",
+                    description = "Access denied",
+                    content = @Content(
+                            schema = @Schema(
+                                    implementation = ErrorResponse.class
+                            )
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "Employee profile not found",
+                    content = @Content(
+                            schema = @Schema(
+                                    implementation = ErrorResponse.class
+                            )
+                    )
+            )
+    })
     @PreAuthorize("hasAuthority('EMPLOYEE_READ')")
     @GetMapping("/profile")
     public ResponseEntity<SelfServiceProfileResponse> getOwnProfile(
@@ -68,6 +113,43 @@ public class SelfServiceController {
      * ============================================================
      */
 
+    @Operation(
+            summary = "Get own leave requests",
+            description = "Returns paginated leave requests belonging to the authenticated employee."
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Leave requests retrieved successfully"
+            ),
+            @ApiResponse(
+                    responseCode = "401",
+                    description = "Authentication required",
+                    content = @Content(
+                            schema = @Schema(
+                                    implementation = ErrorResponse.class
+                            )
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "403",
+                    description = "Access denied",
+                    content = @Content(
+                            schema = @Schema(
+                                    implementation = ErrorResponse.class
+                            )
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "Employee profile not found",
+                    content = @Content(
+                            schema = @Schema(
+                                    implementation = ErrorResponse.class
+                            )
+                    )
+            )
+    })
     @PreAuthorize("hasAuthority('LEAVE_READ')")
     @GetMapping("/leave")
     public ResponseEntity<Page<LeaveResponse>> getOwnLeave(
@@ -110,6 +192,43 @@ public class SelfServiceController {
      * ============================================================
      */
 
+    @Operation(
+            summary = "Get own attendance",
+            description = "Returns paginated attendance records belonging to the authenticated employee."
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Attendance retrieved successfully"
+            ),
+            @ApiResponse(
+                    responseCode = "401",
+                    description = "Authentication required",
+                    content = @Content(
+                            schema = @Schema(
+                                    implementation = ErrorResponse.class
+                            )
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "403",
+                    description = "Access denied",
+                    content = @Content(
+                            schema = @Schema(
+                                    implementation = ErrorResponse.class
+                            )
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "Employee profile not found",
+                    content = @Content(
+                            schema = @Schema(
+                                    implementation = ErrorResponse.class
+                            )
+                    )
+            )
+    })
     @PreAuthorize("hasAuthority('ATTENDANCE_READ')")
     @GetMapping("/attendance")
     public ResponseEntity<Page<AttendanceResponse>> getOwnAttendance(
@@ -145,6 +264,43 @@ public class SelfServiceController {
         );
     }
 
+    @Operation(
+            summary = "Clock in",
+            description = "Clocks the authenticated employee in for the current working day."
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Clock-in successful"
+            ),
+            @ApiResponse(
+                    responseCode = "401",
+                    description = "Authentication required",
+                    content = @Content(
+                            schema = @Schema(
+                                    implementation = ErrorResponse.class
+                            )
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "403",
+                    description = "Access denied",
+                    content = @Content(
+                            schema = @Schema(
+                                    implementation = ErrorResponse.class
+                            )
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "422",
+                    description = "Clock-in business rule violation",
+                    content = @Content(
+                            schema = @Schema(
+                                    implementation = ErrorResponse.class
+                            )
+                    )
+            )
+    })
     @PreAuthorize("hasAuthority('ATTENDANCE_CLOCK_IN')")
     @PostMapping("/attendance/clock-in")
     public ResponseEntity<AttendanceResponse> clockIn(
@@ -161,6 +317,43 @@ public class SelfServiceController {
         );
     }
 
+    @Operation(
+            summary = "Clock out",
+            description = "Clocks the authenticated employee out for the current working day."
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Clock-out successful"
+            ),
+            @ApiResponse(
+                    responseCode = "401",
+                    description = "Authentication required",
+                    content = @Content(
+                            schema = @Schema(
+                                    implementation = ErrorResponse.class
+                            )
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "403",
+                    description = "Access denied",
+                    content = @Content(
+                            schema = @Schema(
+                                    implementation = ErrorResponse.class
+                            )
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "422",
+                    description = "Clock-out business rule violation",
+                    content = @Content(
+                            schema = @Schema(
+                                    implementation = ErrorResponse.class
+                            )
+                    )
+            )
+    })
     @PreAuthorize("hasAuthority('ATTENDANCE_CLOCK_OUT')")
     @PostMapping("/attendance/clock-out")
     public ResponseEntity<AttendanceResponse> clockOut(
@@ -183,6 +376,43 @@ public class SelfServiceController {
      * ============================================================
      */
 
+    @Operation(
+            summary = "Get own timesheets",
+            description = "Returns paginated timesheets belonging to the authenticated employee."
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Timesheets retrieved successfully"
+            ),
+            @ApiResponse(
+                    responseCode = "401",
+                    description = "Authentication required",
+                    content = @Content(
+                            schema = @Schema(
+                                    implementation = ErrorResponse.class
+                            )
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "403",
+                    description = "Access denied",
+                    content = @Content(
+                            schema = @Schema(
+                                    implementation = ErrorResponse.class
+                            )
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "Employee profile not found",
+                    content = @Content(
+                            schema = @Schema(
+                                    implementation = ErrorResponse.class
+                            )
+                    )
+            )
+    })
     @PreAuthorize("hasAuthority('TIMESHEET_READ')")
     @GetMapping("/timesheets")
     public ResponseEntity<Page<TimesheetResponse>> getOwnTimesheets(
@@ -218,6 +448,66 @@ public class SelfServiceController {
         );
     }
 
+    @Operation(
+            summary = "Create own timesheet",
+            description = "Creates a new draft timesheet for the authenticated employee."
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "201",
+                    description = "Timesheet created successfully",
+                    content = @Content(
+                            schema = @Schema(
+                                    implementation = TimesheetResponse.class
+                            )
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "Invalid request",
+                    content = @Content(
+                            schema = @Schema(
+                                    implementation = ErrorResponse.class
+                            )
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "401",
+                    description = "Authentication required",
+                    content = @Content(
+                            schema = @Schema(
+                                    implementation = ErrorResponse.class
+                            )
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "403",
+                    description = "Access denied",
+                    content = @Content(
+                            schema = @Schema(
+                                    implementation = ErrorResponse.class
+                            )
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "Employee profile not found",
+                    content = @Content(
+                            schema = @Schema(
+                                    implementation = ErrorResponse.class
+                            )
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "422",
+                    description = "Timesheet business rule violation",
+                    content = @Content(
+                            schema = @Schema(
+                                    implementation = ErrorResponse.class
+                            )
+                    )
+            )
+    })
     @PreAuthorize("hasAuthority('TIMESHEET_CREATE')")
     @PostMapping("/timesheets")
     public ResponseEntity<TimesheetResponse> createTimesheet(
@@ -240,6 +530,61 @@ public class SelfServiceController {
                 .body(response);
     }
 
+    @Operation(
+            summary = "Add timesheet entry",
+            description = "Adds a work entry to the authenticated employee's draft timesheet."
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "201",
+                    description = "Timesheet entry created successfully"
+            ),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "Invalid request",
+                    content = @Content(
+                            schema = @Schema(
+                                    implementation = ErrorResponse.class
+                            )
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "401",
+                    description = "Authentication required",
+                    content = @Content(
+                            schema = @Schema(
+                                    implementation = ErrorResponse.class
+                            )
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "403",
+                    description = "Access denied",
+                    content = @Content(
+                            schema = @Schema(
+                                    implementation = ErrorResponse.class
+                            )
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "Timesheet or employee not found",
+                    content = @Content(
+                            schema = @Schema(
+                                    implementation = ErrorResponse.class
+                            )
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "422",
+                    description = "Timesheet business rule violation",
+                    content = @Content(
+                            schema = @Schema(
+                                    implementation = ErrorResponse.class
+                            )
+                    )
+            )
+    })
     @PreAuthorize("hasAuthority('TIMESHEET_ENTRY_CREATE')")
     @PostMapping("/timesheets/{timesheetId}/entries")
     public ResponseEntity<Void> addTimesheetEntry(
@@ -264,6 +609,57 @@ public class SelfServiceController {
                 .build();
     }
 
+    @Operation(
+            summary = "Submit own timesheet",
+            description = "Submits the authenticated employee's draft timesheet for approval."
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Timesheet submitted successfully",
+                    content = @Content(
+                            schema = @Schema(
+                                    implementation = TimesheetResponse.class
+                            )
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "401",
+                    description = "Authentication required",
+                    content = @Content(
+                            schema = @Schema(
+                                    implementation = ErrorResponse.class
+                            )
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "403",
+                    description = "Access denied",
+                    content = @Content(
+                            schema = @Schema(
+                                    implementation = ErrorResponse.class
+                            )
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "Timesheet or employee not found",
+                    content = @Content(
+                            schema = @Schema(
+                                    implementation = ErrorResponse.class
+                            )
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "422",
+                    description = "Timesheet business rule violation",
+                    content = @Content(
+                            schema = @Schema(
+                                    implementation = ErrorResponse.class
+                            )
+                    )
+            )
+    })
     @PreAuthorize("hasAuthority('TIMESHEET_SUBMIT')")
     @PostMapping("/timesheets/{timesheetId}/submit")
     public ResponseEntity<TimesheetResponse> submitTimesheet(
