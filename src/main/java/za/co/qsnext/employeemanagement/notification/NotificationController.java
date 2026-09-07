@@ -24,7 +24,11 @@ public class NotificationController {
         this.notificationService = notificationService;
     }
 
-    @PreAuthorize("hasAuthority('NOTIFICATION_READ')")
+    @PreAuthorize("""
+            hasAuthority('NOTIFICATION_READ')
+            and @notificationAuthorizationService
+                .canAccessUserNotifications(#userId, authentication)
+            """)
     @GetMapping("/user/{userId}")
     public ResponseEntity<Page<NotificationResponse>> getByUser(
             @PathVariable UUID userId,
@@ -42,7 +46,11 @@ public class NotificationController {
         );
     }
 
-    @PreAuthorize("hasAuthority('NOTIFICATION_READ')")
+    @PreAuthorize("""
+            hasAuthority('NOTIFICATION_READ')
+            and @notificationAuthorizationService
+                .canAccessUserNotifications(#userId, authentication)
+            """)
     @GetMapping("/user/{userId}/unread")
     public ResponseEntity<Page<NotificationResponse>> getUnread(
             @PathVariable UUID userId,
@@ -60,7 +68,11 @@ public class NotificationController {
         );
     }
 
-    @PreAuthorize("hasAuthority('NOTIFICATION_MARK_READ')")
+    @PreAuthorize("""
+            hasAuthority('NOTIFICATION_MARK_READ')
+            and @notificationAuthorizationService
+                .canAccessNotification(#notificationId, authentication)
+            """)
     @PatchMapping("/{notificationId}/read")
     public ResponseEntity<NotificationResponse> markAsRead(
             @PathVariable UUID notificationId
@@ -73,7 +85,11 @@ public class NotificationController {
         );
     }
 
-    @PreAuthorize("hasAuthority('NOTIFICATION_MARK_UNREAD')")
+    @PreAuthorize("""
+            hasAuthority('NOTIFICATION_MARK_UNREAD')
+            and @notificationAuthorizationService
+                .canAccessNotification(#notificationId, authentication)
+            """)
     @PatchMapping("/{notificationId}/unread")
     public ResponseEntity<NotificationResponse> markAsUnread(
             @PathVariable UUID notificationId
