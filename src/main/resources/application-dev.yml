@@ -4,18 +4,18 @@ spring:
     username: ${DB_USERNAME:postgres}
     password: ${DB_PASSWORD}
 
-  rabbitmq:
-    host: ${RABBITMQ_HOST:localhost}
-    port: ${RABBITMQ_PORT:5672}
-    username: ${RABBITMQ_USERNAME:guest}
-    password: ${RABBITMQ_PASSWORD:guest}
-
     hikari:
       maximum-pool-size: 10
       minimum-idle: 2
       connection-timeout: 30000
       idle-timeout: 600000
       max-lifetime: 1800000
+
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USERNAME:guest}
+    password: ${RABBITMQ_PASSWORD:guest}
 
   jpa:
     hibernate:
@@ -34,6 +34,9 @@ logging:
   level:
     za.co.qsnext.employeemanagement: DEBUG
     org.springframework.security: INFO
+    org.springframework.amqp: DEBUG
+    org.springframework.rabbit: DEBUG
+
 security:
   jwt:
     secret: ${JWT_SECRET}
