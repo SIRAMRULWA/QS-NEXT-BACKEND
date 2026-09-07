@@ -7,6 +7,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import za.co.qsnext.employeemanagement.leave.dto.CreateLeaveBalanceRequest;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
@@ -157,5 +158,24 @@ public class LeaveController {
                         "createdAt"
                 )
         );
+    }
+
+    @PreAuthorize("hasAuthority('LEAVE_CREATE')")
+    @PostMapping("/balances")
+    public ResponseEntity<LeaveBalance> createBalance(
+            @Valid @RequestBody CreateLeaveBalanceRequest request
+    ) {
+
+        LeaveBalance balance =
+                leaveService.createBalance(
+                        request.employeeId(),
+                        request.leaveType(),
+                        request.leaveYear(),
+                        request.allocatedDays()
+                );
+
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(balance);
     }
 }

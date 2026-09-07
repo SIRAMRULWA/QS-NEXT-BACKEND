@@ -4,6 +4,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import za.co.qsnext.employeemanagement.employee.Employee;
+import za.co.qsnext.employeemanagement.employee.EmployeeRepository;
 import za.co.qsnext.employeemanagement.employee.EmployeeService;
 import za.co.qsnext.employeemanagement.exception.BusinessRuleException;
 
@@ -16,13 +18,15 @@ public class AttendanceService {
 
     private final AttendanceRepository attendanceRepository;
     private final EmployeeService employeeService;
+    private final EmployeeRepository employeeRepository;
 
     public AttendanceService(
             AttendanceRepository attendanceRepository,
-            EmployeeService employeeService
+            EmployeeService employeeService, EmployeeRepository employeeRepository
     ) {
         this.attendanceRepository = attendanceRepository;
         this.employeeService = employeeService;
+        this.employeeRepository = employeeRepository;
     }
 
     public Attendance getById(UUID attendanceId) {
@@ -205,5 +209,83 @@ public class AttendanceService {
         attendance.updateNotes(notes);
 
         return attendance;
+    }
+
+    @Transactional(readOnly = true)
+    public Page<Attendance> getOwnAttendance(
+            UUID userId,
+            Pageable pageable
+    ) {
+        Employee employee = employeeRepository
+                .findByUserId(userId)
+                .orElseThrow(() ->
+                        new BusinessRuleException(
+                                "Employee profile not found"
+                        )
+                );
+
+        return attendanceRepository.findByEmployeeId(
+                employee.getId(),
+                pageable
+        );
+    }
+
+    @Transactional
+    public Attendance clockInForUser(UUID userId) {
+
+        Employee employee = employeeRepository
+                .findByUserId(userId)
+                .orElseThrow(() ->
+                        new BusinessRuleException(
+                                "Employee profile not found"
+                        )
+                );
+
+        LocalDate today = LocalDate.now();
+
+        Attendance attendance =
+                attendanceRepository
+                        .findByEmployeeIdAndAttendanceDate(
+                                employee.getId(),
+                                today
+                        )
+                        .orElseGet(() ->
+                                attendanceRepository.save(
+                                        new Attendance(
+                                                employee.getId(),
+                                                today
+                                        )
+                                )
+                        );
+
+        return clockIn(attendance.getId());
+    }
+
+    @Transactional
+    public Attendance clockOutForUser(UUID userId) {
+
+        Employee employee = employeeRepository
+                .findByUserId(userId)
+                .orElseThrow(() ->
+                        new BusinessRuleException(
+                                "Employee profile not found"
+                        )
+                );
+
+        LocalDate today = LocalDate.now();
+
+        Attendance attendance =
+                attendanceRepository
+                        .findByEmployeeIdAndAttendanceDate(
+                                employee.getId(),
+                                today
+                        )
+                        .orElseThrow(() ->
+                                new BusinessRuleException(
+                                        "Attendance record not found for today"
+                                )
+                        );
+
+        return clockOut(attendance.getId());
     }
 }

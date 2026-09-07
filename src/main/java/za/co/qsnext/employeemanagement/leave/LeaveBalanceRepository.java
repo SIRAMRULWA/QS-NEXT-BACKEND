@@ -8,7 +8,8 @@ import java.util.UUID;
 public interface LeaveBalanceRepository
         extends JpaRepository<LeaveBalance, UUID> {
 
-    Optional<LeaveBalance> findByEmployeeIdAndLeaveTypeAndLeaveYear(
+    Optional<LeaveBalance>
+    findByEmployeeIdAndLeaveTypeAndLeaveYear(
             UUID employeeId,
             String leaveType,
             Integer leaveYear

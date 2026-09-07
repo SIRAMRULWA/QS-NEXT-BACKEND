@@ -3,12 +3,8 @@ package za.co.qsnext.employeemanagement.timesheet.dto;
 import jakarta.validation.constraints.NotNull;
 
 import java.time.LocalDate;
-import java.util.UUID;
 
-public record CreateTimesheetRequest(
-
-        @NotNull(message = "Employee ID is required")
-        UUID employeeId,
+public record CreateSelfServiceTimesheetRequest(
 
         @NotNull(message = "Period start date is required")
         LocalDate periodStart,
