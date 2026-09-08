@@ -1,6 +1,5 @@
 package za.co.qsnext.employeemanagement.rabbitmq;
 
-import org.springframework.amqp.support.converter.JacksonJsonMessageConverter;
 import org.springframework.amqp.core.Binding;
 import org.springframework.amqp.core.BindingBuilder;
 import org.springframework.amqp.core.DirectExchange;
@@ -9,6 +8,7 @@ import org.springframework.amqp.core.QueueBuilder;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.core.RabbitAdmin;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.amqp.support.converter.JacksonJsonMessageConverter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -32,9 +32,7 @@ public class RabbitMqConfig {
     @Bean
     public Queue emailQueue() {
         return QueueBuilder
-                .durable(
-                        RabbitMqConstants.EMAIL_QUEUE
-                )
+                .durable(RabbitMqConstants.EMAIL_QUEUE)
                 .deadLetterExchange(
                         RabbitMqConstants.EMAIL_DEAD_LETTER_EXCHANGE
                 )
@@ -47,14 +45,8 @@ public class RabbitMqConfig {
     @Bean
     public Queue emailDeadLetterQueue() {
         return QueueBuilder
-                .durable(
-                        RabbitMqConstants.EMAIL_DEAD_LETTER_QUEUE
-                )
+                .durable(RabbitMqConstants.EMAIL_DEAD_LETTER_QUEUE)
                 .build();
-    }
-    @Bean
-    public JacksonJsonMessageConverter messageConverter() {
-        return new JacksonJsonMessageConverter();
     }
 
     @Bean
@@ -65,9 +57,7 @@ public class RabbitMqConfig {
         return BindingBuilder
                 .bind(emailQueue)
                 .to(emailExchange)
-                .with(
-                        RabbitMqConstants.EMAIL_ROUTING_KEY
-                );
+                .with(RabbitMqConstants.EMAIL_ROUTING_KEY);
     }
 
     @Bean
@@ -78,9 +68,27 @@ public class RabbitMqConfig {
         return BindingBuilder
                 .bind(emailDeadLetterQueue)
                 .to(emailDeadLetterExchange)
-                .with(
-                        RabbitMqConstants.EMAIL_DEAD_LETTER_ROUTING_KEY
-                );
+                .with(RabbitMqConstants.EMAIL_DEAD_LETTER_ROUTING_KEY);
+    }
+
+    @Bean
+    public JacksonJsonMessageConverter rabbitJsonMessageConverter() {
+        return new JacksonJsonMessageConverter();
+    }
+
+    @Bean
+    public RabbitTemplate rabbitTemplate(
+            ConnectionFactory connectionFactory,
+            JacksonJsonMessageConverter rabbitJsonMessageConverter
+    ) {
+        RabbitTemplate rabbitTemplate =
+                new RabbitTemplate(connectionFactory);
+
+        rabbitTemplate.setMessageConverter(
+                rabbitJsonMessageConverter
+        );
+
+        return rabbitTemplate;
     }
 
     @Bean
@@ -88,19 +96,5 @@ public class RabbitMqConfig {
             ConnectionFactory connectionFactory
     ) {
         return new RabbitAdmin(connectionFactory);
-    }
-
-    @Bean
-    public RabbitTemplate rabbitTemplate(
-            ConnectionFactory connectionFactory,
-            JacksonJsonMessageConverter messageConverter
-    ) {
-
-        RabbitTemplate rabbitTemplate =
-                new RabbitTemplate(connectionFactory);
-
-        rabbitTemplate.setMessageConverter(messageConverter);
-
-        return rabbitTemplate;
     }
 }
