@@ -145,6 +145,32 @@ public class GlobalExceptionHandler {
         );
     }
 
+    @ExceptionHandler(ExpenseNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleExpenseNotFound(
+            ExpenseNotFoundException exception,
+            HttpServletRequest request
+    ) {
+        return buildResponse(
+                HttpStatus.NOT_FOUND,
+                "EXPENSE_NOT_FOUND",
+                exception.getMessage(),
+                request.getRequestURI()
+        );
+    }
+
+    @ExceptionHandler(IntegrationNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleIntegrationNotFound(
+            IntegrationNotFoundException exception,
+            HttpServletRequest request
+    ) {
+        return buildResponse(
+                HttpStatus.NOT_FOUND,
+                "INTEGRATION_NOT_FOUND",
+                exception.getMessage(),
+                request.getRequestURI()
+        );
+    }
+
     @ExceptionHandler(UserNotFoundException.class)
     public ResponseEntity<ErrorResponse> handleUserNotFound(
             UserNotFoundException exception,
