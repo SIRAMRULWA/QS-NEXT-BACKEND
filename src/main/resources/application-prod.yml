@@ -1,0 +1,49 @@
+# Production profile. Every value that matters in production is either
+# already required with no default (JWT_SECRET, DB_PASSWORD - see
+# application.yml) or made required here by omitting the dev-friendly
+# "localhost" defaults application.yml sets for local convenience -
+# a production deployment with a missing DB_URL must fail fast at
+# startup, never silently connect to the wrong database.
+spring:
+  datasource:
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+
+    hikari:
+      maximum-pool-size: ${DB_POOL_MAX_SIZE:20}
+      minimum-idle: ${DB_POOL_MIN_IDLE:5}
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+
+  flyway:
+    enabled: true
+
+logging:
+  level:
+    root: WARN
+    za.co.qsnext.employeemanagement: INFO
+    org.springframework.security: WARN
+    org.hibernate.SQL: WARN
+
+management:
+  endpoint:
+    health:
+      # /actuator/health is permitAll() at the Spring Security layer (so
+      # liveness/readiness probes work unauthenticated) - this is what
+      # actually keeps DB/Redis/RabbitMQ connection details out of an
+      # anonymous caller's response in production. Dev/test keep the
+      # base profile's "always" for local debugging convenience.
+      show-details: when-authorized
+
+springdoc:
+  api-docs:
+    enabled: ${API_DOCS_ENABLED:false}
+  swagger-ui:
+    enabled: ${SWAGGER_UI_ENABLED:false}
