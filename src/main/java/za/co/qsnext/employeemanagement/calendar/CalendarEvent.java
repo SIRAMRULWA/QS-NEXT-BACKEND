@@ -22,6 +22,7 @@ public class CalendarEvent {
     public static final String TYPE_HOLIDAY = "HOLIDAY";
     public static final String TYPE_LEAVE = "LEAVE";
     public static final String TYPE_SHIFT = "SHIFT";
+    public static final String TYPE_INTERVIEW = "INTERVIEW";
 
     public static final String VISIBILITY_PUBLIC = "PUBLIC";
     public static final String VISIBILITY_DEPARTMENT = "DEPARTMENT";

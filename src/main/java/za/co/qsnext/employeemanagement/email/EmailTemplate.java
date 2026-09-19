@@ -44,6 +44,27 @@ public enum EmailTemplate {
             "NOTIFICATION",
             "{{title}}",
             "{{message}}"
+    ),
+
+    /**
+     * Candidate-facing (see the {@code recruitment} package) - candidates
+     * have no User account, so this is queued directly to their email
+     * address rather than via NotificationPublisher.
+     */
+    INTERVIEW_INVITATION(
+            "INTERVIEW_INVITATION",
+            "Interview invitation - {{jobTitle}}",
+            "Hi {{candidateName}}, you have been invited to interview for "
+                    + "{{jobTitle}} on {{scheduledAt}}{{locationSuffix}}. "
+                    + "We look forward to speaking with you."
+    ),
+
+    OFFER_EXTENDED(
+            "OFFER_EXTENDED",
+            "Job offer - {{jobTitle}}",
+            "Hi {{candidateName}}, we are pleased to offer you the position of "
+                    + "{{jobTitle}} with a start date of {{startDate}}. "
+                    + "Please reply to this email to let us know your decision."
     );
 
     private final String type;

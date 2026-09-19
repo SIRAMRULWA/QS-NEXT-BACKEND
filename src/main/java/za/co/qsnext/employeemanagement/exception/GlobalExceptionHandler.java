@@ -171,6 +171,19 @@ public class GlobalExceptionHandler {
         );
     }
 
+    @ExceptionHandler(RecruitmentNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleRecruitmentNotFound(
+            RecruitmentNotFoundException exception,
+            HttpServletRequest request
+    ) {
+        return buildResponse(
+                HttpStatus.NOT_FOUND,
+                "RECRUITMENT_NOT_FOUND",
+                exception.getMessage(),
+                request.getRequestURI()
+        );
+    }
+
     @ExceptionHandler(UserNotFoundException.class)
     public ResponseEntity<ErrorResponse> handleUserNotFound(
             UserNotFoundException exception,
