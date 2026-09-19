@@ -53,6 +53,11 @@ spring:
   flyway:
     enabled: true
 
+  servlet:
+    multipart:
+      max-file-size: ${DOCUMENT_MAX_FILE_SIZE:10MB}
+      max-request-size: ${DOCUMENT_MAX_REQUEST_SIZE:10MB}
+
 server:
   port: ${SERVER_PORT:8080}
 
@@ -125,3 +130,8 @@ email:
     sweep-interval-ms: ${EMAIL_OUTBOX_SWEEP_INTERVAL_MS:60000}
     stuck-threshold-seconds: ${EMAIL_OUTBOX_STUCK_THRESHOLD_SECONDS:120}
     sweep-batch-size: ${EMAIL_OUTBOX_SWEEP_BATCH_SIZE:50}
+
+document:
+  storage:
+    local:
+      base-path: ${DOCUMENT_STORAGE_LOCAL_BASE_PATH:./data/documents}
