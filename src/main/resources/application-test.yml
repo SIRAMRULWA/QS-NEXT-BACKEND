@@ -1,0 +1,26 @@
+spring:
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+
+  flyway:
+    enabled: true
+
+logging:
+  level:
+    root: WARN
+    za.co.qsnext.employeemanagement: INFO
+    org.springframework.security: WARN
+    org.testcontainers: INFO
+    com.github.dockerjava: WARN
+
+# Test-only signing secret. Never used outside the "test" profile and never
+# valid for a real deployment. Datasource/RabbitMQ/Redis connection details
+# are supplied dynamically by Testcontainers via @ServiceConnection and are
+# intentionally not set here.
+security:
+  jwt:
+    secret: test-only-jwt-signing-secret-do-not-use-in-production-0123456789
+    access-token-expiration: 900000
+    refresh-token-expiration: 604800000
