@@ -107,14 +107,18 @@ class AuthSecurityIntegrationTest {
 
         /*
          * A freshly-registered user only holds the EMPLOYEE role, which
-         * is not granted USER_READ.
+         * is not granted USER_READ. This is a @PreAuthorize (method
+         * security) denial, handled by GlobalExceptionHandler rather
+         * than RestAccessDeniedHandler (that one only fires for
+         * URL-pattern-level denials in SecurityConfig), hence the
+         * "FORBIDDEN" error code rather than "Forbidden".
          */
         mockMvc.perform(
                         get("/api/v1/users/" + UUID.randomUUID())
                                 .header("Authorization", "Bearer " + accessToken)
                 )
                 .andExpect(status().isForbidden())
-                .andExpect(jsonPath("$.error").value("Forbidden"));
+                .andExpect(jsonPath("$.error").value("FORBIDDEN"));
     }
 
     @Test
