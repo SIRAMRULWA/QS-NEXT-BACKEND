@@ -185,6 +185,38 @@ public class ComplianceService {
         return ComplianceRecordResponse.from(record);
     }
 
+    /**
+     * Called by the Learning module when an employee completes a course
+     * linked to a compliance requirement (see {@code Course#linkedComplianceRequirementId}).
+     * Silently does nothing if the employee has no matching PENDING
+     * record - training completion satisfies compliance only when HR
+     * has actually assigned that requirement to this employee.
+     */
+    @Transactional
+    public void autoCompleteFromTraining(UUID employeeId, UUID requirementId) {
+
+        recordRepository
+                .findByEmployeeIdAndRequirementIdAndStatus(employeeId, requirementId, ComplianceRecord.STATUS_PENDING)
+                .ifPresent(record -> {
+
+                    ComplianceRequirement requirement = requirementRepository.findById(requirementId)
+                            .orElseThrow(() -> new ComplianceNotFoundException(
+                                    "Compliance requirement not found: " + requirementId
+                            ));
+
+                    OffsetDateTime expiresAt = requirement.getValidityPeriodDays() == null
+                            ? null
+                            : OffsetDateTime.now().plusDays(requirement.getValidityPeriodDays());
+
+                    record.complete(null, "Completed via linked training course", null, expiresAt);
+
+                    auditService.log(
+                            "COMPLIANCE_RECORD_COMPLETED", RECORD_ENTITY_TYPE, record.getId(),
+                            AuditService.RESULT_SUCCESS
+                    );
+                });
+    }
+
     public List<ComplianceRecordResponse> getExpiringRecords(int withinDays) {
 
         if (withinDays < 0) {

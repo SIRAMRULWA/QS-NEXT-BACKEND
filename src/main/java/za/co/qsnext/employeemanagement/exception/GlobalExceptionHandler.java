@@ -106,6 +106,45 @@ public class GlobalExceptionHandler {
         );
     }
 
+    @ExceptionHandler(LearningNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleLearningNotFound(
+            LearningNotFoundException exception,
+            HttpServletRequest request
+    ) {
+        return buildResponse(
+                HttpStatus.NOT_FOUND,
+                "LEARNING_NOT_FOUND",
+                exception.getMessage(),
+                request.getRequestURI()
+        );
+    }
+
+    @ExceptionHandler(PerformanceNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handlePerformanceNotFound(
+            PerformanceNotFoundException exception,
+            HttpServletRequest request
+    ) {
+        return buildResponse(
+                HttpStatus.NOT_FOUND,
+                "PERFORMANCE_NOT_FOUND",
+                exception.getMessage(),
+                request.getRequestURI()
+        );
+    }
+
+    @ExceptionHandler(RecognitionNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleRecognitionNotFound(
+            RecognitionNotFoundException exception,
+            HttpServletRequest request
+    ) {
+        return buildResponse(
+                HttpStatus.NOT_FOUND,
+                "RECOGNITION_NOT_FOUND",
+                exception.getMessage(),
+                request.getRequestURI()
+        );
+    }
+
     @ExceptionHandler(UserNotFoundException.class)
     public ResponseEntity<ErrorResponse> handleUserNotFound(
             UserNotFoundException exception,

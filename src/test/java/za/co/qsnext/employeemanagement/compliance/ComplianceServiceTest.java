@@ -273,6 +273,40 @@ class ComplianceServiceTest {
     }
 
     @Test
+    void autoCompleteFromTraining_completesTheMatchingPendingRecord() {
+        UUID employeeId = UUID.randomUUID();
+        UUID requirementId = UUID.randomUUID();
+        UUID recordId = UUID.randomUUID();
+
+        ComplianceRecord record = recordWithId(recordId, employeeId, requirementId);
+
+        when(recordRepository.findByEmployeeIdAndRequirementIdAndStatus(
+                employeeId, requirementId, ComplianceRecord.STATUS_PENDING))
+                .thenReturn(Optional.of(record));
+        when(requirementRepository.findById(requirementId))
+                .thenReturn(Optional.of(requirementWithId(requirementId, 90)));
+
+        complianceService.autoCompleteFromTraining(employeeId, requirementId);
+
+        assertThat(record.getStatus()).isEqualTo(ComplianceRecord.STATUS_COMPLETED);
+        assertThat(record.getExpiresAt()).isAfter(OffsetDateTime.now().plusDays(89));
+    }
+
+    @Test
+    void autoCompleteFromTraining_doesNothing_whenNoPendingRecordExists() {
+        UUID employeeId = UUID.randomUUID();
+        UUID requirementId = UUID.randomUUID();
+
+        when(recordRepository.findByEmployeeIdAndRequirementIdAndStatus(
+                employeeId, requirementId, ComplianceRecord.STATUS_PENDING))
+                .thenReturn(Optional.empty());
+
+        complianceService.autoCompleteFromTraining(employeeId, requirementId);
+
+        verify(requirementRepository, org.mockito.Mockito.never()).findById(any());
+    }
+
+    @Test
     void getExpiringRecords_rejectsANegativeWindow() {
         assertThatThrownBy(() -> complianceService.getExpiringRecords(-5))
                 .isInstanceOf(BusinessRuleException.class);
