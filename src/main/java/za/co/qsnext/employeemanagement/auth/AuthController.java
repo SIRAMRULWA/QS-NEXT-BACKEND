@@ -60,10 +60,11 @@ public class AuthController {
 
     @PostMapping("/logout")
     public ResponseEntity<Void> logout(
-            @Valid @RequestBody RefreshTokenRequest request
+            @Valid @RequestBody RefreshTokenRequest request,
+            HttpServletRequest httpRequest
     ) {
 
-        authService.logout(request);
+        authService.logout(request, extractBearerToken(httpRequest));
 
         return ResponseEntity.noContent().build();
     }
@@ -71,7 +72,8 @@ public class AuthController {
     @PostMapping("/change-password")
     public ResponseEntity<Void> changePassword(
             Authentication authentication,
-            @Valid @RequestBody ChangePasswordRequest request
+            @Valid @RequestBody ChangePasswordRequest request,
+            HttpServletRequest httpRequest
     ) {
 
         CustomUserDetails userDetails =
@@ -79,7 +81,8 @@ public class AuthController {
 
         authService.changePassword(
                 userDetails.getUserId(),
-                request
+                request,
+                extractBearerToken(httpRequest)
         );
 
         return ResponseEntity.noContent().build();
@@ -103,5 +106,16 @@ public class AuthController {
         authService.resetPassword(request);
 
         return ResponseEntity.noContent().build();
+    }
+
+    private String extractBearerToken(HttpServletRequest httpRequest) {
+
+        String header = httpRequest.getHeader("Authorization");
+
+        if (header == null || !header.startsWith("Bearer ")) {
+            return null;
+        }
+
+        return header.substring("Bearer ".length());
     }
 }

@@ -56,11 +56,13 @@ class JwtServiceTest {
     }
 
     @Test
-    void extractTokenId_throwsIllegalArgument_forAnAccessTokenWithNoJti() {
-        String accessToken = jwtService.generateAccessToken(UUID.randomUUID(), "jane.doe");
+    void extractTokenId_returnsAUniqueId_forAnAccessTokenToo() {
+        String firstToken = jwtService.generateAccessToken(UUID.randomUUID(), "jane.doe");
+        String secondToken = jwtService.generateAccessToken(UUID.randomUUID(), "jane.doe");
 
-        assertThatThrownBy(() -> jwtService.extractTokenId(accessToken))
-                .isInstanceOf(IllegalArgumentException.class);
+        assertThat(jwtService.extractTokenId(firstToken)).isNotNull();
+        assertThat(jwtService.extractTokenId(firstToken))
+                .isNotEqualTo(jwtService.extractTokenId(secondToken));
     }
 
     @Test

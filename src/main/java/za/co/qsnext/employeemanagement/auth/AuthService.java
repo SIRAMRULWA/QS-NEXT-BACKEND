@@ -29,6 +29,7 @@ import za.co.qsnext.employeemanagement.exception.DuplicateResourceException;
 import za.co.qsnext.employeemanagement.exception.UnauthorizedException;
 import za.co.qsnext.employeemanagement.security.CustomUserDetails;
 import za.co.qsnext.employeemanagement.security.JwtService;
+import za.co.qsnext.employeemanagement.security.TokenRevocationService;
 import za.co.qsnext.employeemanagement.user.Role;
 import za.co.qsnext.employeemanagement.user.RoleRepository;
 import za.co.qsnext.employeemanagement.user.User;
@@ -64,6 +65,7 @@ public class AuthService {
     private final PasswordResetTokenRepository passwordResetTokenRepository;
     private final EmailRepository emailRepository;
     private final AuditService auditService;
+    private final TokenRevocationService tokenRevocationService;
 
     private final int maxFailedLoginAttempts;
     private final Duration accountLockDuration;
@@ -81,6 +83,7 @@ public class AuthService {
             PasswordResetTokenRepository passwordResetTokenRepository,
             EmailRepository emailRepository,
             AuditService auditService,
+            TokenRevocationService tokenRevocationService,
             @Value("${security.auth.max-failed-login-attempts}") int maxFailedLoginAttempts,
             @Value("${security.auth.account-lock-duration-minutes}") long accountLockDurationMinutes,
             @Value("${security.auth.password-reset-token-expiration-minutes}") long passwordResetTokenExpirationMinutes
@@ -96,6 +99,7 @@ public class AuthService {
         this.passwordResetTokenRepository = passwordResetTokenRepository;
         this.emailRepository = emailRepository;
         this.auditService = auditService;
+        this.tokenRevocationService = tokenRevocationService;
         this.maxFailedLoginAttempts = maxFailedLoginAttempts;
         this.accountLockDuration = Duration.ofMinutes(accountLockDurationMinutes);
         this.passwordResetTokenExpiration = Duration.ofMinutes(passwordResetTokenExpirationMinutes);
@@ -336,7 +340,12 @@ public class AuthService {
     }
 
     @Transactional
-    public void logout(RefreshTokenRequest request) {
+    public void logout(
+            RefreshTokenRequest request,
+            String accessToken
+    ) {
+
+        tokenRevocationService.revoke(accessToken);
 
         if (request.refreshToken() == null
                 || request.refreshToken().isBlank()) {
@@ -371,7 +380,8 @@ public class AuthService {
     @Transactional
     public void changePassword(
             UUID userId,
-            ChangePasswordRequest request
+            ChangePasswordRequest request,
+            String accessToken
     ) {
 
         User user = userRepository.findById(userId)
@@ -396,6 +406,7 @@ public class AuthService {
         );
 
         refreshTokenService.revokeAllActiveForUser(user.getId());
+        tokenRevocationService.revoke(accessToken);
 
         auditService.log(
                 user.getId(),

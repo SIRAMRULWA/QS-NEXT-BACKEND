@@ -1,8 +1,11 @@
 package za.co.qsnext.employeemanagement.user;
 
+import org.springframework.cache.Cache;
+import org.springframework.cache.CacheManager;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+import za.co.qsnext.employeemanagement.config.RedisCacheNames;
 import za.co.qsnext.employeemanagement.exception.DuplicateResourceException;
 import za.co.qsnext.employeemanagement.exception.UserNotFoundException;
 
@@ -15,9 +18,14 @@ import java.util.UUID;
 public class UserService {
 
     private final UserRepository userRepository;
+    private final CacheManager cacheManager;
 
-    public UserService(UserRepository userRepository) {
+    public UserService(
+            UserRepository userRepository,
+            CacheManager cacheManager
+    ) {
         this.userRepository = userRepository;
+        this.cacheManager = cacheManager;
     }
 
     public User getById(UUID userId) {
@@ -69,12 +77,14 @@ public class UserService {
     public void disable(UUID userId) {
         User user = getById(userId);
         user.disable();
+        evictAuthorizationCache(user.getUsername());
     }
 
     @Transactional
     public void enable(UUID userId) {
         User user = getById(userId);
         user.enable();
+        evictAuthorizationCache(user.getUsername());
     }
 
     /**
@@ -97,6 +107,7 @@ public class UserService {
             user.lockUntil(
                     OffsetDateTime.now().plus(accountLockDuration)
             );
+            evictAuthorizationCache(user.getUsername());
         }
     }
 
@@ -109,6 +120,21 @@ public class UserService {
     public void recordSuccessfulLogin(UUID userId) {
         User user = getById(userId);
         user.recordSuccessfulLogin();
+        evictAuthorizationCache(user.getUsername());
+    }
+
+    /**
+     * Evicts the cached authorization principal (used by
+     * {@code JwtAuthenticationFilter} on every request) so an enabled,
+     * disabled or lock state change takes effect immediately rather than
+     * waiting out the cache TTL.
+     */
+    private void evictAuthorizationCache(String username) {
+        Cache cache = cacheManager.getCache(RedisCacheNames.USER_PRINCIPALS);
+
+        if (cache != null) {
+            cache.evict(username);
+        }
     }
 
     @Transactional

@@ -17,8 +17,10 @@ import za.co.qsnext.employeemanagement.email.Email;
 import za.co.qsnext.employeemanagement.email.EmailRepository;
 
 import java.util.List;
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -276,6 +278,84 @@ class AuthenticationIntegrationTest extends AbstractIntegrationTest {
                         .content(objectMapper.writeValueAsString(
                                 new LoginRequest("resetpw.user", "R3setPassword!"))))
                 .andExpect(status().isOk());
+    }
+
+    @Test
+    void logout_revokesTheAccessToken_soItCanNoLongerAuthenticateRequests() throws Exception {
+        MvcResult loginResult = registerAndLoginRaw(
+                "revoke.access.user", "revoke.access.user@qsnext.co.za", "S3curePassword!");
+
+        JsonNode loginBody = objectMapper.readTree(loginResult.getResponse().getContentAsString());
+        String accessToken = loginBody.get("accessToken").asText();
+        String refreshToken = loginBody.get("refreshToken").asText();
+
+        // Sanity: the freshly issued access token authenticates successfully.
+        mockMvc.perform(get("/api/v1/departments/{id}", UUID.randomUUID())
+                        .header("Authorization", "Bearer " + accessToken))
+                .andExpect(status().isNotFound());
+
+        mockMvc.perform(post("/api/v1/auth/logout")
+                        .header("Authorization", "Bearer " + accessToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(new RefreshTokenRequest(refreshToken))))
+                .andExpect(status().isNoContent());
+
+        mockMvc.perform(get("/api/v1/departments/{id}", UUID.randomUUID())
+                        .header("Authorization", "Bearer " + accessToken))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void changePassword_revokesTheAccessTokenUsedToMakeTheRequest() throws Exception {
+        MvcResult loginResult = registerAndLoginRaw(
+                "revoke.onchange.user", "revoke.onchange.user@qsnext.co.za", "S3curePassword!");
+
+        JsonNode loginBody = objectMapper.readTree(loginResult.getResponse().getContentAsString());
+        String accessToken = loginBody.get("accessToken").asText();
+
+        mockMvc.perform(post("/api/v1/auth/change-password")
+                        .header("Authorization", "Bearer " + accessToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(
+                                new ChangePasswordRequest("S3curePassword!", "N3wSecurePassword!"))))
+                .andExpect(status().isNoContent());
+
+        mockMvc.perform(get("/api/v1/departments/{id}", UUID.randomUUID())
+                        .header("Authorization", "Bearer " + accessToken))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void lockout_immediatelyInvalidatesAnAlreadyIssuedAccessToken() throws Exception {
+        MvcResult loginResult = registerAndLoginRaw(
+                "cachebust.user", "cachebust.user@qsnext.co.za", "S3curePassword!");
+
+        JsonNode loginBody = objectMapper.readTree(loginResult.getResponse().getContentAsString());
+        String accessToken = loginBody.get("accessToken").asText();
+
+        // Sanity: the token authenticates successfully before the account is locked.
+        mockMvc.perform(get("/api/v1/departments/{id}", UUID.randomUUID())
+                        .header("Authorization", "Bearer " + accessToken))
+                .andExpect(status().isNotFound());
+
+        LoginRequest badLogin = new LoginRequest("cachebust.user", "WrongPassword!");
+
+        for (int attempt = 0; attempt < 5; attempt++) {
+            mockMvc.perform(post("/api/v1/auth/login")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(badLogin)))
+                    .andExpect(status().isUnauthorized());
+        }
+
+        /*
+         * The access token itself is still validly signed and unexpired,
+         * but the account backing it is now locked. The cached
+         * authorization principal must have been evicted so this is
+         * enforced immediately rather than for up to the cache TTL.
+         */
+        mockMvc.perform(get("/api/v1/departments/{id}", UUID.randomUUID())
+                        .header("Authorization", "Bearer " + accessToken))
+                .andExpect(status().isUnauthorized());
     }
 
     @Test

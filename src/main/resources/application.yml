@@ -10,6 +10,12 @@ spring:
     username: ${DB_USERNAME:postgres}
     password: ${DB_PASSWORD}
 
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+
   jpa:
     open-in-view: false
     hibernate:
@@ -76,3 +82,11 @@ security:
     max-failed-login-attempts: ${AUTH_MAX_FAILED_LOGIN_ATTEMPTS:5}
     account-lock-duration-minutes: ${AUTH_ACCOUNT_LOCK_DURATION_MINUTES:15}
     password-reset-token-expiration-minutes: ${AUTH_PASSWORD_RESET_TOKEN_EXPIRATION_MINUTES:30}
+
+  cache:
+    default-ttl-minutes: ${CACHE_DEFAULT_TTL_MINUTES:10}
+    user-principal-ttl-minutes: ${CACHE_USER_PRINCIPAL_TTL_MINUTES:5}
+
+  rate-limit:
+    max-requests: ${RATE_LIMIT_MAX_REQUESTS:10}
+    window-seconds: ${RATE_LIMIT_WINDOW_SECONDS:60}

@@ -25,6 +25,7 @@ import za.co.qsnext.employeemanagement.exception.AccountLockedException;
 import za.co.qsnext.employeemanagement.exception.UnauthorizedException;
 import za.co.qsnext.employeemanagement.security.CustomUserDetails;
 import za.co.qsnext.employeemanagement.security.JwtService;
+import za.co.qsnext.employeemanagement.security.TokenRevocationService;
 import za.co.qsnext.employeemanagement.user.RoleRepository;
 import za.co.qsnext.employeemanagement.user.User;
 import za.co.qsnext.employeemanagement.user.UserRepository;
@@ -80,6 +81,8 @@ class AuthServiceTest {
     private EmailRepository emailRepository;
     @Mock
     private AuditService auditService;
+    @Mock
+    private TokenRevocationService tokenRevocationService;
 
     private JwtService jwtService;
     private AuthService authService;
@@ -100,6 +103,7 @@ class AuthServiceTest {
                 passwordResetTokenRepository,
                 emailRepository,
                 auditService,
+                tokenRevocationService,
                 MAX_FAILED_LOGIN_ATTEMPTS,
                 15,
                 30
@@ -240,6 +244,34 @@ class AuthServiceTest {
     }
 
     @Test
+    void logout_revokesBothTheAccessTokenAndTheRefreshToken() {
+        User user = userWithId();
+
+        JwtService.IssuedRefreshToken issued =
+                jwtService.generateRefreshToken(user.getId(), user.getUsername());
+
+        RefreshToken storedToken = new RefreshToken(
+                issued.tokenId(), user.getId(), issued.expiresAt(), "127.0.0.1");
+
+        when(refreshTokenService.find(issued.tokenId())).thenReturn(Optional.of(storedToken));
+
+        authService.logout(new RefreshTokenRequest(issued.token()), "access-token");
+
+        verify(tokenRevocationService).revoke("access-token");
+        verify(refreshTokenService).revoke(storedToken);
+        verify(auditService).log(
+                user.getId(), "LOGOUT", "USER", user.getId(), AuditService.RESULT_SUCCESS);
+    }
+
+    @Test
+    void logout_revokesOnlyTheAccessToken_whenNoRefreshTokenIsGiven() {
+        authService.logout(new RefreshTokenRequest(""), "access-token");
+
+        verify(tokenRevocationService).revoke("access-token");
+        verify(refreshTokenService, never()).find(any());
+    }
+
+    @Test
     void changePassword_updatesPassword_whenCurrentPasswordMatches() {
         User user = userWithId();
 
@@ -248,10 +280,11 @@ class AuthServiceTest {
         when(passwordService.encode("N3wPass!word")).thenReturn("new-hash");
 
         authService.changePassword(
-                user.getId(), new ChangePasswordRequest("old-pass", "N3wPass!word"));
+                user.getId(), new ChangePasswordRequest("old-pass", "N3wPass!word"), "access-token");
 
         verify(userService).changePassword(user.getId(), "new-hash");
         verify(refreshTokenService).revokeAllActiveForUser(user.getId());
+        verify(tokenRevocationService).revoke("access-token");
         verify(auditService).log(user.getId(), "PASSWORD_CHANGE", "USER", user.getId(), AuditService.RESULT_SUCCESS);
     }
 
@@ -264,7 +297,7 @@ class AuthServiceTest {
 
         assertThatThrownBy(() ->
                 authService.changePassword(
-                        user.getId(), new ChangePasswordRequest("wrong", "N3wPass!word")))
+                        user.getId(), new ChangePasswordRequest("wrong", "N3wPass!word"), "access-token"))
                 .isInstanceOf(UnauthorizedException.class);
 
         verify(userService, never()).changePassword(any(), any());

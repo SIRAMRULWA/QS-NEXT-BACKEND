@@ -130,6 +130,16 @@ public class JwtService {
         return UUID.fromString(userId);
     }
 
+    public OffsetDateTime extractExpiration(
+            String token
+    ) {
+
+        return OffsetDateTime.ofInstant(
+                extractClaims(token).getExpiration().toInstant(),
+                ZoneOffset.UTC
+        );
+    }
+
     public boolean isTokenValid(
             String token,
             String username
@@ -188,6 +198,7 @@ public class JwtService {
 
         return Jwts.builder()
                 .subject(username)
+                .id(UUID.randomUUID().toString())
                 .claim(
                         USER_ID_CLAIM,
                         userId.toString()
