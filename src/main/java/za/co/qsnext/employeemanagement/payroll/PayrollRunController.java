@@ -1,5 +1,8 @@
 package za.co.qsnext.employeemanagement.payroll;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.Operation;
+
 import jakarta.validation.Valid;
 
 import org.springframework.http.HttpStatus;
@@ -19,6 +22,7 @@ import za.co.qsnext.employeemanagement.security.CustomUserDetails;
 import java.util.List;
 import java.util.UUID;
 
+@Tag(name = "Payroll Runs", description = "Pay periods, payroll runs, line items and payslips.")
 @RestController
 @RequestMapping("/api/v1/payroll")
 public class PayrollRunController {
@@ -32,6 +36,7 @@ public class PayrollRunController {
     }
 
     @PreAuthorize("hasAuthority('PAYROLL_MANAGE')")
+    @Operation(summary = "Create pay period")
     @PostMapping("/pay-periods")
     public ResponseEntity<PayPeriodResponse> createPayPeriod(@Valid @RequestBody CreatePayPeriodRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(payrollRunService.createPayPeriod(
@@ -40,12 +45,14 @@ public class PayrollRunController {
     }
 
     @PreAuthorize("hasAuthority('PAYROLL_MANAGE')")
+    @Operation(summary = "Get all pay periods")
     @GetMapping("/pay-periods")
     public ResponseEntity<List<PayPeriodResponse>> getAllPayPeriods() {
         return ResponseEntity.ok(payrollRunService.getAllPayPeriods());
     }
 
     @PreAuthorize("hasAuthority('PAYROLL_MANAGE')")
+    @Operation(summary = "Create run")
     @PostMapping("/runs")
     public ResponseEntity<PayrollRunResponse> createRun(
             Authentication authentication,
@@ -59,18 +66,21 @@ public class PayrollRunController {
     }
 
     @PreAuthorize("hasAuthority('PAYROLL_MANAGE')")
+    @Operation(summary = "Get run")
     @GetMapping("/runs/{runId}")
     public ResponseEntity<PayrollRunResponse> getRun(@PathVariable UUID runId) {
         return ResponseEntity.ok(payrollRunService.getRun(runId));
     }
 
     @PreAuthorize("hasAuthority('PAYROLL_MANAGE')")
+    @Operation(summary = "Get run entries")
     @GetMapping("/runs/{runId}/entries")
     public ResponseEntity<List<PayrollRunEntryResponse>> getRunEntries(@PathVariable UUID runId) {
         return ResponseEntity.ok(payrollRunService.getRunEntries(runId));
     }
 
     @PreAuthorize("hasAuthority('PAYROLL_MANAGE')")
+    @Operation(summary = "Add line item")
     @PostMapping("/entries/{entryId}/line-items")
     public ResponseEntity<PayrollRunEntryResponse> addLineItem(
             @PathVariable UUID entryId,
@@ -84,6 +94,7 @@ public class PayrollRunController {
     }
 
     @PreAuthorize("hasAuthority('PAYROLL_MANAGE')")
+    @Operation(summary = "Approve run")
     @PatchMapping("/runs/{runId}/approve")
     public ResponseEntity<PayrollRunResponse> approveRun(
             Authentication authentication,
@@ -95,12 +106,14 @@ public class PayrollRunController {
     }
 
     @PreAuthorize("hasAuthority('PAYROLL_MANAGE')")
+    @Operation(summary = "Mark run paid")
     @PatchMapping("/runs/{runId}/pay")
     public ResponseEntity<PayrollRunResponse> markRunPaid(@PathVariable UUID runId) {
         return ResponseEntity.ok(payrollRunService.markRunPaid(runId));
     }
 
     @PreAuthorize("hasAnyAuthority('PAYROLL_MANAGE', 'PAYROLL_READ')")
+    @Operation(summary = "Get payslip")
     @GetMapping("/entries/{entryId}/payslip")
     public ResponseEntity<PayslipResponse> getPayslip(
             Authentication authentication,
@@ -114,6 +127,7 @@ public class PayrollRunController {
     }
 
     @PreAuthorize("hasAnyAuthority('PAYROLL_MANAGE', 'PAYROLL_READ')")
+    @Operation(summary = "Get payslips for employee")
     @GetMapping("/employees/{employeeId}/payslips")
     public ResponseEntity<List<PayrollRunEntryResponse>> getPayslipsForEmployee(
             Authentication authentication,
@@ -127,6 +141,7 @@ public class PayrollRunController {
     }
 
     @PreAuthorize("hasAuthority('PAYROLL_READ')")
+    @Operation(summary = "Get my payslips")
     @GetMapping("/my-payslips")
     public ResponseEntity<List<PayrollRunEntryResponse>> getMyPayslips(Authentication authentication) {
         CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();

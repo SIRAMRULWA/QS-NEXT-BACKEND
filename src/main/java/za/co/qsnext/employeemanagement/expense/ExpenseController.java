@@ -1,5 +1,8 @@
 package za.co.qsnext.employeemanagement.expense;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.Operation;
+
 import jakarta.validation.Valid;
 
 import org.springframework.data.domain.Page;
@@ -24,6 +27,7 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
+@Tag(name = "Expenses", description = "Expense categories, claims and approval workflow.")
 @RestController
 @RequestMapping("/api/v1/expenses")
 public class ExpenseController {
@@ -37,6 +41,7 @@ public class ExpenseController {
     }
 
     @PreAuthorize("hasAuthority('EXPENSE_MANAGE')")
+    @Operation(summary = "Create category")
     @PostMapping("/categories")
     public ResponseEntity<ExpenseCategoryResponse> createCategory(
             @Valid @RequestBody CreateExpenseCategoryRequest request
@@ -47,12 +52,14 @@ public class ExpenseController {
     }
 
     @PreAuthorize("hasAnyAuthority('EXPENSE_MANAGE', 'EXPENSE_READ')")
+    @Operation(summary = "Get active categories")
     @GetMapping("/categories")
     public ResponseEntity<List<ExpenseCategoryResponse>> getActiveCategories() {
         return ResponseEntity.ok(expenseService.getActiveCategories());
     }
 
     @PreAuthorize("hasAnyAuthority('EXPENSE_MANAGE', 'EXPENSE_READ')")
+    @Operation(summary = "Create claim")
     @PostMapping("/employees/{employeeId}/claims")
     public ResponseEntity<ExpenseClaimResponse> createClaim(
             Authentication authentication,
@@ -70,6 +77,7 @@ public class ExpenseController {
     }
 
     @PreAuthorize("hasAnyAuthority('EXPENSE_MANAGE', 'EXPENSE_READ')")
+    @Operation(summary = "Submit claim")
     @PatchMapping("/claims/{claimId}/submit")
     public ResponseEntity<ExpenseClaimResponse> submitClaim(
             Authentication authentication,
@@ -83,6 +91,7 @@ public class ExpenseController {
     }
 
     @PreAuthorize("hasAnyAuthority('EXPENSE_MANAGE', 'EXPENSE_READ')")
+    @Operation(summary = "Get claims for employee")
     @GetMapping("/employees/{employeeId}/claims")
     public ResponseEntity<List<ExpenseClaimResponse>> getClaimsForEmployee(
             Authentication authentication,
@@ -96,6 +105,7 @@ public class ExpenseController {
     }
 
     @PreAuthorize("hasAuthority('EXPENSE_READ')")
+    @Operation(summary = "Get my claims")
     @GetMapping("/my-claims")
     public ResponseEntity<List<ExpenseClaimResponse>> getMyClaims(Authentication authentication) {
         CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
@@ -104,6 +114,7 @@ public class ExpenseController {
     }
 
     @PreAuthorize("hasAuthority('EXPENSE_MANAGE')")
+    @Operation(summary = "Get pending approvals")
     @GetMapping("/pending-approvals")
     public ResponseEntity<Page<ExpenseClaimResponse>> getPendingApprovals(
             @RequestParam(defaultValue = "0") int page,
@@ -115,6 +126,7 @@ public class ExpenseController {
     }
 
     @PreAuthorize("hasAuthority('EXPENSE_MANAGE')")
+    @Operation(summary = "Approve claim")
     @PatchMapping("/claims/{claimId}/approve")
     public ResponseEntity<ExpenseClaimResponse> approveClaim(
             Authentication authentication,
@@ -126,6 +138,7 @@ public class ExpenseController {
     }
 
     @PreAuthorize("hasAuthority('EXPENSE_MANAGE')")
+    @Operation(summary = "Reject claim")
     @PatchMapping("/claims/{claimId}/reject")
     public ResponseEntity<ExpenseClaimResponse> rejectClaim(
             Authentication authentication,
@@ -138,12 +151,14 @@ public class ExpenseController {
     }
 
     @PreAuthorize("hasAuthority('EXPENSE_MANAGE')")
+    @Operation(summary = "Mark reimbursed")
     @PatchMapping("/claims/{claimId}/reimburse")
     public ResponseEntity<ExpenseClaimResponse> markReimbursed(@PathVariable UUID claimId) {
         return ResponseEntity.ok(expenseService.markReimbursed(claimId));
     }
 
     @PreAuthorize("hasAuthority('EXPENSE_MANAGE')")
+    @Operation(summary = "Get category summary")
     @GetMapping("/reports/by-category")
     public ResponseEntity<List<ExpenseCategorySummaryResponse>> getCategorySummary(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,

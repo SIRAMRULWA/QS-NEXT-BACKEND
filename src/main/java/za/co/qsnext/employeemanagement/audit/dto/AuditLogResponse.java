@@ -13,6 +13,7 @@ public record AuditLogResponse(
         UUID entityId,
         String ipAddress,
         String result,
+        String correlationId,
         OffsetDateTime createdAt
 ) {
 
@@ -25,6 +26,7 @@ public record AuditLogResponse(
                 auditLog.getEntityId(),
                 auditLog.getIpAddress(),
                 auditLog.getResult(),
+                auditLog.getCorrelationId(),
                 auditLog.getCreatedAt()
         );
     }

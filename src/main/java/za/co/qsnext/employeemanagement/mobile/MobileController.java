@@ -1,5 +1,8 @@
 package za.co.qsnext.employeemanagement.mobile;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.Operation;
+
 import jakarta.validation.Valid;
 
 import org.springframework.http.HttpStatus;
@@ -16,6 +19,7 @@ import za.co.qsnext.employeemanagement.security.CustomUserDetails;
 import java.util.List;
 import java.util.UUID;
 
+@Tag(name = "Mobile", description = "Mobile-friendly composite reads and push-notification device registration.")
 @RestController
 @RequestMapping("/api/v1/mobile")
 public class MobileController {
@@ -33,6 +37,7 @@ public class MobileController {
             and hasAuthority('CALENDAR_READ')
             and hasAuthority('NOTIFICATION_READ')
             """)
+    @Operation(summary = "Get dashboard")
     @GetMapping("/dashboard")
     public ResponseEntity<MobileDashboardResponse> getDashboard(Authentication authentication) {
         UUID userId = ((CustomUserDetails) authentication.getPrincipal()).getUserId();
@@ -40,6 +45,7 @@ public class MobileController {
     }
 
     @PreAuthorize("isAuthenticated()")
+    @Operation(summary = "Register device")
     @PostMapping("/devices")
     public ResponseEntity<MobileDeviceResponse> registerDevice(
             Authentication authentication,
@@ -51,6 +57,7 @@ public class MobileController {
     }
 
     @PreAuthorize("isAuthenticated()")
+    @Operation(summary = "Get my devices")
     @GetMapping("/devices")
     public ResponseEntity<List<MobileDeviceResponse>> getMyDevices(Authentication authentication) {
         UUID userId = ((CustomUserDetails) authentication.getPrincipal()).getUserId();
@@ -58,6 +65,7 @@ public class MobileController {
     }
 
     @PreAuthorize("isAuthenticated()")
+    @Operation(summary = "Unregister device")
     @DeleteMapping("/devices/{deviceId}")
     public ResponseEntity<Void> unregisterDevice(
             Authentication authentication,

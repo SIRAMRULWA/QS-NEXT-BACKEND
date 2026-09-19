@@ -1,5 +1,8 @@
 package za.co.qsnext.employeemanagement.department;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.Operation;
+
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -12,6 +15,7 @@ import za.co.qsnext.employeemanagement.department.dto.UpdateDepartmentRequest;
 
 import java.util.UUID;
 
+@Tag(name = "Departments", description = "Department CRUD and employee assignment.")
 @RestController
 @RequestMapping("/api/v1/departments")
 public class DepartmentController {
@@ -25,6 +29,7 @@ public class DepartmentController {
     }
 
     @PreAuthorize("hasAuthority('DEPARTMENT_READ')")
+    @Operation(summary = "Get by id")
     @GetMapping("/{departmentId}")
     public ResponseEntity<DepartmentResponse> getById(
             @PathVariable UUID departmentId
@@ -39,6 +44,7 @@ public class DepartmentController {
     }
 
     @PreAuthorize("hasAuthority('DEPARTMENT_CREATE')")
+    @Operation(summary = "Create")
     @PostMapping
     public ResponseEntity<DepartmentResponse> create(
             @Valid @RequestBody CreateDepartmentRequest request
@@ -58,6 +64,7 @@ public class DepartmentController {
     }
 
     @PreAuthorize("hasAuthority('DEPARTMENT_UPDATE')")
+    @Operation(summary = "Update")
     @PutMapping("/{departmentId}")
     public ResponseEntity<DepartmentResponse> update(
             @PathVariable UUID departmentId,
@@ -77,6 +84,7 @@ public class DepartmentController {
     }
 
     @PreAuthorize("hasAuthority('DEPARTMENT_DELETE')")
+    @Operation(summary = "Delete")
     @DeleteMapping("/{departmentId}")
     public ResponseEntity<Void> delete(
             @PathVariable UUID departmentId

@@ -1,5 +1,8 @@
 package za.co.qsnext.employeemanagement.calendar;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.Operation;
+
 import jakarta.validation.Valid;
 
 import org.springframework.http.HttpStatus;
@@ -17,6 +20,7 @@ import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.UUID;
 
+@Tag(name = "Calendar", description = "Company and personal calendar events and holidays.")
 @RestController
 @RequestMapping("/api/v1/calendar")
 public class CalendarController {
@@ -30,6 +34,7 @@ public class CalendarController {
     }
 
     @PreAuthorize("hasAuthority('CALENDAR_READ')")
+    @Operation(summary = "List events")
     @GetMapping("/events")
     public ResponseEntity<List<CalendarEventResponse>> listEvents(
             Authentication authentication,
@@ -44,6 +49,7 @@ public class CalendarController {
     }
 
     @PreAuthorize("hasAuthority('CALENDAR_CREATE')")
+    @Operation(summary = "Create event")
     @PostMapping("/events")
     public ResponseEntity<CalendarEventResponse> createEvent(
             Authentication authentication,
@@ -65,6 +71,7 @@ public class CalendarController {
     }
 
     @PreAuthorize("hasAuthority('CALENDAR_MANAGE_HOLIDAYS')")
+    @Operation(summary = "Create holiday")
     @PostMapping("/holidays")
     public ResponseEntity<CalendarEventResponse> createHoliday(
             @Valid @RequestBody CreateHolidayRequest request
@@ -75,6 +82,7 @@ public class CalendarController {
     }
 
     @PreAuthorize("hasAuthority('CALENDAR_CREATE')")
+    @Operation(summary = "Delete event")
     @DeleteMapping("/events/{eventId}")
     public ResponseEntity<Void> deleteEvent(
             Authentication authentication,

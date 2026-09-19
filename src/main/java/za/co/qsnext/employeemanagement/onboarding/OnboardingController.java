@@ -1,5 +1,8 @@
 package za.co.qsnext.employeemanagement.onboarding;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.Operation;
+
 import jakarta.validation.Valid;
 
 import org.springframework.http.HttpStatus;
@@ -17,6 +20,7 @@ import za.co.qsnext.employeemanagement.security.CustomUserDetails;
 import java.util.List;
 import java.util.UUID;
 
+@Tag(name = "Onboarding", description = "New-employee onboarding templates, tasks and progress tracking.")
 @RestController
 @RequestMapping("/api/v1/onboarding")
 public class OnboardingController {
@@ -28,6 +32,7 @@ public class OnboardingController {
     }
 
     @PreAuthorize("hasAuthority('ONBOARDING_MANAGE')")
+    @Operation(summary = "Create template")
     @PostMapping("/templates")
     public ResponseEntity<OnboardingTemplateResponse> createTemplate(
             @Valid @RequestBody CreateOnboardingTemplateRequest request
@@ -40,12 +45,14 @@ public class OnboardingController {
     }
 
     @PreAuthorize("hasAuthority('ONBOARDING_MANAGE')")
+    @Operation(summary = "Get all templates")
     @GetMapping("/templates")
     public ResponseEntity<List<OnboardingTemplateResponse>> getAllTemplates() {
         return ResponseEntity.ok(onboardingService.getAllTemplates());
     }
 
     @PreAuthorize("hasAuthority('ONBOARDING_MANAGE')")
+    @Operation(summary = "Start workflow")
     @PostMapping("/workflows")
     public ResponseEntity<OnboardingWorkflowResponse> startWorkflow(
             @RequestParam UUID employeeId,
@@ -57,6 +64,7 @@ public class OnboardingController {
     }
 
     @PreAuthorize("hasAuthority('ONBOARDING_MANAGE')")
+    @Operation(summary = "Get workflows for employee")
     @GetMapping("/employees/{employeeId}/workflows")
     public ResponseEntity<List<OnboardingWorkflowResponse>> getWorkflowsForEmployee(
             @PathVariable UUID employeeId
@@ -65,6 +73,7 @@ public class OnboardingController {
     }
 
     @PreAuthorize("hasAuthority('ONBOARDING_MANAGE')")
+    @Operation(summary = "Get workflow tasks")
     @GetMapping("/workflows/{workflowId}/tasks")
     public ResponseEntity<List<OnboardingTaskResponse>> getWorkflowTasks(
             @PathVariable UUID workflowId
@@ -73,6 +82,7 @@ public class OnboardingController {
     }
 
     @PreAuthorize("hasAuthority('ONBOARDING_TASK_READ')")
+    @Operation(summary = "Get own tasks")
     @GetMapping("/my-tasks")
     public ResponseEntity<List<OnboardingTaskResponse>> getOwnTasks(
             Authentication authentication
@@ -83,6 +93,7 @@ public class OnboardingController {
     }
 
     @PreAuthorize("hasAuthority('ONBOARDING_TASK_READ')")
+    @Operation(summary = "Complete task")
     @PatchMapping("/tasks/{taskId}/complete")
     public ResponseEntity<OnboardingTaskResponse> completeTask(
             Authentication authentication,

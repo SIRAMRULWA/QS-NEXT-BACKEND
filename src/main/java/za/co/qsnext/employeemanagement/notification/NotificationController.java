@@ -1,5 +1,8 @@
 package za.co.qsnext.employeemanagement.notification;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.Operation;
+
 import jakarta.validation.Valid;
 
 import org.springframework.data.domain.Page;
@@ -18,6 +21,7 @@ import za.co.qsnext.employeemanagement.security.CustomUserDetails;
 
 import java.util.UUID;
 
+@Tag(name = "Notifications", description = "In-app notifications and delivery preferences.")
 @RestController
 @RequestMapping("/api/v1/notifications")
 public class NotificationController {
@@ -35,6 +39,7 @@ public class NotificationController {
             and @notificationAuthorizationService
                 .canAccessUserNotifications(#userId, authentication)
             """)
+    @Operation(summary = "Get by user")
     @GetMapping("/user/{userId}")
     public ResponseEntity<Page<NotificationResponse>> getByUser(
             @PathVariable UUID userId,
@@ -57,6 +62,7 @@ public class NotificationController {
             and @notificationAuthorizationService
                 .canAccessUserNotifications(#userId, authentication)
             """)
+    @Operation(summary = "Get unread")
     @GetMapping("/user/{userId}/unread")
     public ResponseEntity<Page<NotificationResponse>> getUnread(
             @PathVariable UUID userId,
@@ -79,6 +85,7 @@ public class NotificationController {
             and @notificationAuthorizationService
                 .canAccessNotification(#notificationId, authentication)
             """)
+    @Operation(summary = "Mark as read")
     @PatchMapping("/{notificationId}/read")
     public ResponseEntity<NotificationResponse> markAsRead(
             @PathVariable UUID notificationId
@@ -96,6 +103,7 @@ public class NotificationController {
             and @notificationAuthorizationService
                 .canAccessNotification(#notificationId, authentication)
             """)
+    @Operation(summary = "Mark as unread")
     @PatchMapping("/{notificationId}/unread")
     public ResponseEntity<NotificationResponse> markAsUnread(
             @PathVariable UUID notificationId
@@ -109,6 +117,7 @@ public class NotificationController {
     }
 
     @PreAuthorize("isAuthenticated()")
+    @Operation(summary = "Get own preference")
     @GetMapping("/preferences")
     public ResponseEntity<NotificationPreferenceResponse> getOwnPreference(
             Authentication authentication
@@ -123,6 +132,7 @@ public class NotificationController {
     }
 
     @PreAuthorize("isAuthenticated()")
+    @Operation(summary = "Update own preference")
     @PutMapping("/preferences")
     public ResponseEntity<NotificationPreferenceResponse> updateOwnPreference(
             Authentication authentication,

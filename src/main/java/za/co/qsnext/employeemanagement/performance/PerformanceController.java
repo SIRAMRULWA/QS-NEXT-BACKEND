@@ -1,5 +1,8 @@
 package za.co.qsnext.employeemanagement.performance;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.Operation;
+
 import jakarta.validation.Valid;
 
 import org.springframework.http.HttpStatus;
@@ -14,6 +17,7 @@ import za.co.qsnext.employeemanagement.security.CustomUserDetails;
 import java.util.List;
 import java.util.UUID;
 
+@Tag(name = "Performance", description = "Performance cycles, goals, reviews and development plans.")
 @RestController
 @RequestMapping("/api/v1/performance")
 public class PerformanceController {
@@ -27,6 +31,7 @@ public class PerformanceController {
     }
 
     @PreAuthorize("hasAuthority('PERFORMANCE_MANAGE')")
+    @Operation(summary = "Create cycle")
     @PostMapping("/cycles")
     public ResponseEntity<PerformanceCycleResponse> createCycle(
             @Valid @RequestBody CreatePerformanceCycleRequest request
@@ -37,12 +42,14 @@ public class PerformanceController {
     }
 
     @PreAuthorize("hasAnyAuthority('PERFORMANCE_MANAGE', 'PERFORMANCE_READ')")
+    @Operation(summary = "Get all cycles")
     @GetMapping("/cycles")
     public ResponseEntity<List<PerformanceCycleResponse>> getAllCycles() {
         return ResponseEntity.ok(performanceService.getAllCycles());
     }
 
     @PreAuthorize("hasAuthority('PERFORMANCE_MANAGE')")
+    @Operation(summary = "Create goal")
     @PostMapping("/employees/{employeeId}/goals")
     public ResponseEntity<PerformanceGoalResponse> createGoal(
             @PathVariable UUID employeeId,
@@ -55,6 +62,7 @@ public class PerformanceController {
     }
 
     @PreAuthorize("hasAnyAuthority('PERFORMANCE_MANAGE', 'PERFORMANCE_READ')")
+    @Operation(summary = "Get goals for employee")
     @GetMapping("/employees/{employeeId}/goals")
     public ResponseEntity<List<PerformanceGoalResponse>> getGoalsForEmployee(
             Authentication authentication,
@@ -68,6 +76,7 @@ public class PerformanceController {
     }
 
     @PreAuthorize("hasAnyAuthority('PERFORMANCE_MANAGE', 'PERFORMANCE_READ')")
+    @Operation(summary = "Update goal status")
     @PatchMapping("/goals/{goalId}/status")
     public ResponseEntity<PerformanceGoalResponse> updateGoalStatus(
             Authentication authentication,
@@ -82,6 +91,7 @@ public class PerformanceController {
     }
 
     @PreAuthorize("hasAuthority('PERFORMANCE_MANAGE')")
+    @Operation(summary = "Create review")
     @PostMapping("/reviews")
     public ResponseEntity<PerformanceReviewResponse> createReview(
             @Valid @RequestBody CreatePerformanceReviewRequest request
@@ -92,6 +102,7 @@ public class PerformanceController {
     }
 
     @PreAuthorize("hasAnyAuthority('PERFORMANCE_MANAGE', 'PERFORMANCE_READ')")
+    @Operation(summary = "Get review")
     @GetMapping("/reviews/{reviewId}")
     public ResponseEntity<PerformanceReviewResponse> getReview(
             Authentication authentication,
@@ -105,6 +116,7 @@ public class PerformanceController {
     }
 
     @PreAuthorize("hasAnyAuthority('PERFORMANCE_MANAGE', 'PERFORMANCE_READ')")
+    @Operation(summary = "Get reviews for employee")
     @GetMapping("/employees/{employeeId}/reviews")
     public ResponseEntity<List<PerformanceReviewResponse>> getReviewsForEmployee(
             Authentication authentication,
@@ -118,6 +130,7 @@ public class PerformanceController {
     }
 
     @PreAuthorize("hasAuthority('PERFORMANCE_READ')")
+    @Operation(summary = "Submit self assessment")
     @PatchMapping("/reviews/{reviewId}/self-assessment")
     public ResponseEntity<PerformanceReviewResponse> submitSelfAssessment(
             Authentication authentication,
@@ -132,6 +145,7 @@ public class PerformanceController {
     }
 
     @PreAuthorize("hasAnyAuthority('PERFORMANCE_MANAGE', 'PERFORMANCE_READ')")
+    @Operation(summary = "Submit manager assessment")
     @PatchMapping("/reviews/{reviewId}/manager-assessment")
     public ResponseEntity<PerformanceReviewResponse> submitManagerAssessment(
             Authentication authentication,
@@ -146,6 +160,7 @@ public class PerformanceController {
     }
 
     @PreAuthorize("hasAuthority('PERFORMANCE_MANAGE')")
+    @Operation(summary = "Create development plan")
     @PostMapping("/employees/{employeeId}/development-plans")
     public ResponseEntity<DevelopmentPlanResponse> createDevelopmentPlan(
             @PathVariable UUID employeeId,
@@ -158,6 +173,7 @@ public class PerformanceController {
     }
 
     @PreAuthorize("hasAnyAuthority('PERFORMANCE_MANAGE', 'PERFORMANCE_READ')")
+    @Operation(summary = "Get development plans for employee")
     @GetMapping("/employees/{employeeId}/development-plans")
     public ResponseEntity<List<DevelopmentPlanResponse>> getDevelopmentPlansForEmployee(
             Authentication authentication,
@@ -171,6 +187,7 @@ public class PerformanceController {
     }
 
     @PreAuthorize("hasAnyAuthority('PERFORMANCE_MANAGE', 'PERFORMANCE_READ')")
+    @Operation(summary = "Complete development plan")
     @PatchMapping("/development-plans/{planId}/complete")
     public ResponseEntity<DevelopmentPlanResponse> completeDevelopmentPlan(
             Authentication authentication,

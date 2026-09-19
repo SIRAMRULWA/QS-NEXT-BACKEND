@@ -1,5 +1,8 @@
 package za.co.qsnext.employeemanagement.integration;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.Operation;
+
 import jakarta.validation.Valid;
 
 import org.springframework.http.HttpStatus;
@@ -14,6 +17,7 @@ import za.co.qsnext.employeemanagement.integration.dto.UpsertIntegrationSettingR
 
 import java.util.List;
 
+@Tag(name = "Integrations", description = "Third-party integration configuration (email, storage, AI, payroll, ...).")
 @RestController
 @RequestMapping("/api/v1/integrations")
 @PreAuthorize("hasAuthority('INTEGRATION_MANAGE')")
@@ -25,16 +29,19 @@ public class IntegrationController {
         this.integrationService = integrationService;
     }
 
+    @Operation(summary = "Get all configs")
     @GetMapping
     public ResponseEntity<List<IntegrationConfigResponse>> getAllConfigs() {
         return ResponseEntity.ok(integrationService.getAllConfigs());
     }
 
+    @Operation(summary = "Get config")
     @GetMapping("/{type}")
     public ResponseEntity<IntegrationConfigResponse> getConfig(@PathVariable String type) {
         return ResponseEntity.ok(integrationService.getConfig(type));
     }
 
+    @Operation(summary = "Update config")
     @PutMapping("/{type}")
     public ResponseEntity<IntegrationConfigResponse> updateConfig(
             @PathVariable String type,
@@ -45,11 +52,13 @@ public class IntegrationController {
         );
     }
 
+    @Operation(summary = "Get settings")
     @GetMapping("/{type}/settings")
     public ResponseEntity<List<IntegrationSettingResponse>> getSettings(@PathVariable String type) {
         return ResponseEntity.ok(integrationService.getSettings(type));
     }
 
+    @Operation(summary = "Upsert setting")
     @PutMapping("/{type}/settings/{settingKey}")
     public ResponseEntity<IntegrationSettingResponse> upsertSetting(
             @PathVariable String type,
@@ -61,6 +70,7 @@ public class IntegrationController {
         );
     }
 
+    @Operation(summary = "Delete setting")
     @DeleteMapping("/{type}/settings/{settingKey}")
     public ResponseEntity<Void> deleteSetting(@PathVariable String type, @PathVariable String settingKey) {
         integrationService.deleteSetting(type, settingKey);

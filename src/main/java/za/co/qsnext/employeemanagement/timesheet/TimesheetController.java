@@ -1,5 +1,8 @@
 package za.co.qsnext.employeemanagement.timesheet;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.Operation;
+
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -9,6 +12,7 @@ import za.co.qsnext.employeemanagement.timesheet.dto.*;
 
 import java.util.UUID;
 
+@Tag(name = "Timesheets", description = "Timesheet periods, entries, submission and approval.")
 @RestController
 @RequestMapping("/api/v1/timesheets")
 public class TimesheetController {
@@ -22,6 +26,7 @@ public class TimesheetController {
     }
 
     @PreAuthorize("hasAuthority('TIMESHEET_READ')")
+    @Operation(summary = "Get by id")
     @GetMapping("/{timesheetId}")
     public ResponseEntity<TimesheetResponse> getById(
             @PathVariable UUID timesheetId
@@ -35,6 +40,7 @@ public class TimesheetController {
     }
 
     @PreAuthorize("hasAuthority('TIMESHEET_CREATE')")
+    @Operation(summary = "Create")
     @PostMapping
     public ResponseEntity<TimesheetResponse> create(
             @Valid @RequestBody CreateTimesheetRequest request
@@ -55,6 +61,7 @@ public class TimesheetController {
     }
 
     @PreAuthorize("hasAuthority('TIMESHEET_ENTRY_CREATE')")
+    @Operation(summary = "Add entry")
     @PostMapping("/{timesheetId}/entries")
     public ResponseEntity<Void> addEntry(
             @PathVariable UUID timesheetId,
@@ -74,6 +81,7 @@ public class TimesheetController {
     }
 
     @PreAuthorize("hasAuthority('TIMESHEET_SUBMIT')")
+    @Operation(summary = "Submit")
     @PostMapping("/{timesheetId}/submit")
     public ResponseEntity<TimesheetResponse> submit(
             @PathVariable UUID timesheetId
@@ -87,6 +95,7 @@ public class TimesheetController {
     }
 
     @PreAuthorize("hasAuthority('TIMESHEET_APPROVE')")
+    @Operation(summary = "Approve")
     @PostMapping("/{timesheetId}/approve")
     public ResponseEntity<TimesheetResponse> approve(
             @PathVariable UUID timesheetId,
@@ -104,6 +113,7 @@ public class TimesheetController {
     }
 
     @PreAuthorize("hasAuthority('TIMESHEET_REJECT')")
+    @Operation(summary = "Reject")
     @PostMapping("/{timesheetId}/reject")
     public ResponseEntity<TimesheetResponse> reject(
             @PathVariable UUID timesheetId
@@ -117,6 +127,7 @@ public class TimesheetController {
     }
 
     @PreAuthorize("hasAuthority('TIMESHEET_ENTRY_DELETE')")
+    @Operation(summary = "Delete entry")
     @DeleteMapping("/entries/{entryId}")
     public ResponseEntity<Void> deleteEntry(
             @PathVariable UUID entryId

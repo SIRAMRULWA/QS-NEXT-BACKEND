@@ -2,6 +2,7 @@ package za.co.qsnext.employeemanagement.audit;
 
 import jakarta.servlet.http.HttpServletRequest;
 
+import org.slf4j.MDC;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -11,6 +12,8 @@ import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
 import za.co.qsnext.employeemanagement.audit.dto.AuditLogResponse;
+import za.co.qsnext.employeemanagement.observability.BusinessMetrics;
+import za.co.qsnext.employeemanagement.observability.CorrelationIdFilter;
 import za.co.qsnext.employeemanagement.security.SecurityUtils;
 
 import java.util.UUID;
@@ -28,9 +31,11 @@ public class AuditService {
     public static final String RESULT_FAILURE = "FAILURE";
 
     private final AuditLogRepository auditLogRepository;
+    private final BusinessMetrics businessMetrics;
 
-    public AuditService(AuditLogRepository auditLogRepository) {
+    public AuditService(AuditLogRepository auditLogRepository, BusinessMetrics businessMetrics) {
         this.auditLogRepository = auditLogRepository;
+        this.businessMetrics = businessMetrics;
     }
 
     /**
@@ -82,10 +87,12 @@ public class AuditService {
                 newValues,
                 currentRequestIp(),
                 currentRequestUserAgent(),
-                result
+                result,
+                MDC.get(CorrelationIdFilter.MDC_KEY)
         );
 
         auditLogRepository.save(auditLog);
+        businessMetrics.recordEvent(action, result);
     }
 
     private String currentRequestIp() {

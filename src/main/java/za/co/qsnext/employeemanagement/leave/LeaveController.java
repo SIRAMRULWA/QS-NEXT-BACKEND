@@ -1,5 +1,8 @@
 package za.co.qsnext.employeemanagement.leave;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.Operation;
+
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -17,6 +20,7 @@ import za.co.qsnext.employeemanagement.leave.dto.LeaveResponse;
 
 import java.util.UUID;
 
+@Tag(name = "Leave", description = "Leave requests, approvals and balances.")
 @RestController
 @RequestMapping("/api/v1/leave")
 public class LeaveController {
@@ -28,6 +32,7 @@ public class LeaveController {
     }
 
     @PreAuthorize("hasAuthority('LEAVE_READ')")
+    @Operation(summary = "Get by id")
     @GetMapping("/{leaveRequestId}")
     public ResponseEntity<LeaveResponse> getById(
             @PathVariable UUID leaveRequestId
@@ -41,6 +46,7 @@ public class LeaveController {
     }
 
     @PreAuthorize("hasAuthority('LEAVE_READ')")
+    @Operation(summary = "Get by employee")
     @GetMapping("/employee/{employeeId}")
     public ResponseEntity<Page<LeaveResponse>> getByEmployee(
             @PathVariable UUID employeeId,
@@ -58,6 +64,7 @@ public class LeaveController {
     }
 
     @PreAuthorize("hasAuthority('LEAVE_READ')")
+    @Operation(summary = "Get by status")
     @GetMapping("/status/{status}")
     public ResponseEntity<Page<LeaveResponse>> getByStatus(
             @PathVariable String status,
@@ -75,6 +82,7 @@ public class LeaveController {
     }
 
     @PreAuthorize("hasAuthority('LEAVE_CREATE')")
+    @Operation(summary = "Create")
     @PostMapping
     public ResponseEntity<LeaveResponse> create(
             @Valid @RequestBody CreateLeaveRequest request
@@ -97,6 +105,7 @@ public class LeaveController {
     }
 
     @PreAuthorize("hasAuthority('LEAVE_APPROVE')")
+    @Operation(summary = "Approve")
     @PostMapping("/{leaveRequestId}/approve")
     public ResponseEntity<LeaveResponse> approve(
             @PathVariable UUID leaveRequestId,
@@ -115,6 +124,7 @@ public class LeaveController {
     }
 
     @PreAuthorize("hasAuthority('LEAVE_REJECT')")
+    @Operation(summary = "Reject")
     @PostMapping("/{leaveRequestId}/reject")
     public ResponseEntity<LeaveResponse> reject(
             @PathVariable UUID leaveRequestId
@@ -128,6 +138,7 @@ public class LeaveController {
     }
 
     @PreAuthorize("hasAuthority('LEAVE_CANCEL')")
+    @Operation(summary = "Cancel")
     @PostMapping("/{leaveRequestId}/cancel")
     public ResponseEntity<LeaveResponse> cancel(
             @PathVariable UUID leaveRequestId
@@ -161,6 +172,7 @@ public class LeaveController {
     }
 
     @PreAuthorize("hasAuthority('LEAVE_CREATE')")
+    @Operation(summary = "Create balance")
     @PostMapping("/balances")
     public ResponseEntity<LeaveBalance> createBalance(
             @Valid @RequestBody CreateLeaveBalanceRequest request

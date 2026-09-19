@@ -1,5 +1,8 @@
 package za.co.qsnext.employeemanagement.recruitment;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.Operation;
+
 import jakarta.validation.Valid;
 
 import org.springframework.http.HttpStatus;
@@ -17,6 +20,7 @@ import za.co.qsnext.employeemanagement.security.CustomUserDetails;
 import java.util.List;
 import java.util.UUID;
 
+@Tag(name = "Recruitment - Interviews", description = "Interview scheduling and feedback.")
 @RestController
 @RequestMapping("/api/v1/recruitment/interviews")
 public class InterviewController {
@@ -30,6 +34,7 @@ public class InterviewController {
     }
 
     @PreAuthorize("hasAuthority('RECRUITMENT_MANAGE')")
+    @Operation(summary = "Schedule interview")
     @PostMapping
     public ResponseEntity<InterviewResponse> scheduleInterview(
             @Valid @RequestBody ScheduleInterviewRequest request
@@ -43,6 +48,7 @@ public class InterviewController {
     }
 
     @PreAuthorize("hasAuthority('RECRUITMENT_MANAGE')")
+    @Operation(summary = "Get interviews for application")
     @GetMapping("/applications/{applicationId}")
     public ResponseEntity<List<InterviewResponse>> getInterviewsForApplication(
             @PathVariable UUID applicationId
@@ -51,6 +57,7 @@ public class InterviewController {
     }
 
     @PreAuthorize("hasAuthority('RECRUITMENT_INTERVIEWER')")
+    @Operation(summary = "Get my interviews")
     @GetMapping("/my-interviews")
     public ResponseEntity<List<InterviewResponse>> getMyInterviews(Authentication authentication) {
         CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
@@ -59,6 +66,7 @@ public class InterviewController {
     }
 
     @PreAuthorize("hasAnyAuthority('RECRUITMENT_MANAGE', 'RECRUITMENT_INTERVIEWER')")
+    @Operation(summary = "Complete interview")
     @PatchMapping("/{interviewId}/complete")
     public ResponseEntity<InterviewResponse> completeInterview(
             Authentication authentication,
@@ -72,6 +80,7 @@ public class InterviewController {
     }
 
     @PreAuthorize("hasAnyAuthority('RECRUITMENT_MANAGE', 'RECRUITMENT_INTERVIEWER')")
+    @Operation(summary = "Cancel interview")
     @PatchMapping("/{interviewId}/cancel")
     public ResponseEntity<InterviewResponse> cancelInterview(
             Authentication authentication,
@@ -85,6 +94,7 @@ public class InterviewController {
     }
 
     @PreAuthorize("hasAnyAuthority('RECRUITMENT_MANAGE', 'RECRUITMENT_INTERVIEWER')")
+    @Operation(summary = "Submit feedback")
     @PostMapping("/{interviewId}/feedback")
     public ResponseEntity<InterviewFeedbackResponse> submitFeedback(
             Authentication authentication,
@@ -102,6 +112,7 @@ public class InterviewController {
     }
 
     @PreAuthorize("hasAuthority('RECRUITMENT_MANAGE')")
+    @Operation(summary = "Get feedback for application")
     @GetMapping("/applications/{applicationId}/feedback")
     public ResponseEntity<List<InterviewFeedbackResponse>> getFeedbackForApplication(
             @PathVariable UUID applicationId

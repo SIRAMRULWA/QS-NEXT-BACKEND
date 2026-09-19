@@ -1,5 +1,8 @@
 package za.co.qsnext.employeemanagement.document;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.Operation;
+
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -17,6 +20,7 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
+@Tag(name = "Documents", description = "Employee document upload, storage and versioning.")
 @RestController
 @RequestMapping("/api/v1/documents")
 public class DocumentController {
@@ -30,6 +34,7 @@ public class DocumentController {
     }
 
     @PreAuthorize("hasAuthority('DOCUMENT_MANAGE')")
+    @Operation(summary = "Upload")
     @PostMapping(value = "/employees/{employeeId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<DocumentResponse> upload(
             Authentication authentication,
@@ -50,6 +55,7 @@ public class DocumentController {
     }
 
     @PreAuthorize("hasAuthority('DOCUMENT_MANAGE')")
+    @Operation(summary = "Upload new version")
     @PostMapping(
             value = "/employees/{employeeId}/families/{documentFamilyId}/versions",
             consumes = MediaType.MULTIPART_FORM_DATA_VALUE
@@ -73,6 +79,7 @@ public class DocumentController {
     }
 
     @PreAuthorize("hasAuthority('DOCUMENT_READ')")
+    @Operation(summary = "Get employee documents")
     @GetMapping("/employees/{employeeId}")
     public ResponseEntity<List<DocumentResponse>> getEmployeeDocuments(
             Authentication authentication,
@@ -86,6 +93,7 @@ public class DocumentController {
     }
 
     @PreAuthorize("hasAuthority('DOCUMENT_READ')")
+    @Operation(summary = "Get my documents")
     @GetMapping("/my-documents")
     public ResponseEntity<List<DocumentResponse>> getMyDocuments(Authentication authentication) {
         CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
@@ -94,6 +102,7 @@ public class DocumentController {
     }
 
     @PreAuthorize("hasAuthority('DOCUMENT_READ')")
+    @Operation(summary = "Get version history")
     @GetMapping("/employees/{employeeId}/families/{documentFamilyId}/versions")
     public ResponseEntity<List<DocumentResponse>> getVersionHistory(
             Authentication authentication,
@@ -108,6 +117,7 @@ public class DocumentController {
     }
 
     @PreAuthorize("hasAuthority('DOCUMENT_READ')")
+    @Operation(summary = "Download")
     @GetMapping("/{documentId}/download")
     public ResponseEntity<byte[]> download(
             Authentication authentication,
@@ -126,12 +136,14 @@ public class DocumentController {
     }
 
     @PreAuthorize("hasAuthority('DOCUMENT_MANAGE')")
+    @Operation(summary = "Archive")
     @PatchMapping("/{documentId}/archive")
     public ResponseEntity<DocumentResponse> archive(@PathVariable UUID documentId) {
         return ResponseEntity.ok(documentService.archive(documentId));
     }
 
     @PreAuthorize("hasAuthority('DOCUMENT_MANAGE')")
+    @Operation(summary = "Get expiring documents")
     @GetMapping("/expiring")
     public ResponseEntity<List<DocumentResponse>> getExpiringDocuments(
             @RequestParam(defaultValue = "30") int withinDays

@@ -52,6 +52,9 @@ public class AuditLog {
     @Column(name = "result", nullable = false, length = 30)
     private String result;
 
+    @Column(name = "correlation_id", length = 100)
+    private String correlationId;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private OffsetDateTime createdAt;
 
@@ -67,7 +70,8 @@ public class AuditLog {
             String newValues,
             String ipAddress,
             String userAgent,
-            String result
+            String result,
+            String correlationId
     ) {
         this.userId = userId;
         this.action = action;
@@ -78,6 +82,7 @@ public class AuditLog {
         this.ipAddress = ipAddress;
         this.userAgent = userAgent;
         this.result = result;
+        this.correlationId = correlationId;
     }
 
     @PrePersist
@@ -123,6 +128,10 @@ public class AuditLog {
 
     public String getResult() {
         return result;
+    }
+
+    public String getCorrelationId() {
+        return correlationId;
     }
 
     public OffsetDateTime getCreatedAt() {

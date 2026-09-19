@@ -1,5 +1,8 @@
 package za.co.qsnext.employeemanagement.learning;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.Operation;
+
 import jakarta.validation.Valid;
 
 import org.springframework.http.HttpStatus;
@@ -19,6 +22,7 @@ import za.co.qsnext.employeemanagement.security.CustomUserDetails;
 import java.util.List;
 import java.util.UUID;
 
+@Tag(name = "Learning", description = "Courses, enrollments, learning paths and employee skills.")
 @RestController
 @RequestMapping("/api/v1/learning")
 public class LearningController {
@@ -32,6 +36,7 @@ public class LearningController {
     }
 
     @PreAuthorize("hasAuthority('LEARNING_MANAGE')")
+    @Operation(summary = "Create course")
     @PostMapping("/courses")
     public ResponseEntity<CourseResponse> createCourse(@Valid @RequestBody CreateCourseRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(learningService.createCourse(
@@ -41,12 +46,14 @@ public class LearningController {
     }
 
     @PreAuthorize("hasAnyAuthority('LEARNING_MANAGE', 'LEARNING_READ')")
+    @Operation(summary = "Get active courses")
     @GetMapping("/courses")
     public ResponseEntity<List<CourseResponse>> getActiveCourses() {
         return ResponseEntity.ok(learningService.getActiveCourses());
     }
 
     @PreAuthorize("hasAuthority('LEARNING_MANAGE')")
+    @Operation(summary = "Create learning path")
     @PostMapping("/paths")
     public ResponseEntity<LearningPathResponse> createLearningPath(
             @Valid @RequestBody CreateLearningPathRequest request
@@ -57,12 +64,14 @@ public class LearningController {
     }
 
     @PreAuthorize("hasAnyAuthority('LEARNING_MANAGE', 'LEARNING_READ')")
+    @Operation(summary = "Get all learning paths")
     @GetMapping("/paths")
     public ResponseEntity<List<LearningPathResponse>> getAllLearningPaths() {
         return ResponseEntity.ok(learningService.getAllLearningPaths());
     }
 
     @PreAuthorize("hasAnyAuthority('LEARNING_MANAGE', 'LEARNING_READ')")
+    @Operation(summary = "Enroll")
     @PostMapping("/employees/{employeeId}/enrollments")
     public ResponseEntity<CourseEnrollmentResponse> enroll(
             Authentication authentication,
@@ -77,6 +86,7 @@ public class LearningController {
     }
 
     @PreAuthorize("hasAnyAuthority('LEARNING_MANAGE', 'LEARNING_READ')")
+    @Operation(summary = "Get enrollments for employee")
     @GetMapping("/employees/{employeeId}/enrollments")
     public ResponseEntity<List<CourseEnrollmentResponse>> getEnrollmentsForEmployee(
             Authentication authentication,
@@ -90,6 +100,7 @@ public class LearningController {
     }
 
     @PreAuthorize("hasAuthority('LEARNING_READ')")
+    @Operation(summary = "Get my enrollments")
     @GetMapping("/my-enrollments")
     public ResponseEntity<List<CourseEnrollmentResponse>> getMyEnrollments(Authentication authentication) {
         CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
@@ -98,6 +109,7 @@ public class LearningController {
     }
 
     @PreAuthorize("hasAnyAuthority('LEARNING_MANAGE', 'LEARNING_READ')")
+    @Operation(summary = "Update progress")
     @PatchMapping("/enrollments/{enrollmentId}/progress")
     public ResponseEntity<CourseEnrollmentResponse> updateProgress(
             Authentication authentication,
@@ -112,6 +124,7 @@ public class LearningController {
     }
 
     @PreAuthorize("hasAnyAuthority('LEARNING_MANAGE', 'LEARNING_READ')")
+    @Operation(summary = "Complete course")
     @PatchMapping("/enrollments/{enrollmentId}/complete")
     public ResponseEntity<CourseEnrollmentResponse> completeCourse(
             Authentication authentication,

@@ -1,5 +1,8 @@
 package za.co.qsnext.employeemanagement.recruitment;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.Operation;
+
 import jakarta.validation.Valid;
 
 import org.springframework.http.HttpStatus;
@@ -14,6 +17,7 @@ import za.co.qsnext.employeemanagement.recruitment.dto.OfferResponse;
 
 import java.util.UUID;
 
+@Tag(name = "Recruitment - Offers", description = "Job offers and hiring.")
 @RestController
 @RequestMapping("/api/v1/recruitment/offers")
 @PreAuthorize("hasAuthority('RECRUITMENT_MANAGE')")
@@ -25,6 +29,7 @@ public class OfferController {
         this.offerService = offerService;
     }
 
+    @Operation(summary = "Create offer")
     @PostMapping
     public ResponseEntity<OfferResponse> createOffer(@Valid @RequestBody CreateOfferRequest request) {
         OfferResponse response = offerService.createOffer(
@@ -35,31 +40,37 @@ public class OfferController {
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
+    @Operation(summary = "Get offer")
     @GetMapping("/{offerId}")
     public ResponseEntity<OfferResponse> getOffer(@PathVariable UUID offerId) {
         return ResponseEntity.ok(offerService.getOffer(offerId));
     }
 
+    @Operation(summary = "Send offer")
     @PatchMapping("/{offerId}/send")
     public ResponseEntity<OfferResponse> sendOffer(@PathVariable UUID offerId) {
         return ResponseEntity.ok(offerService.sendOffer(offerId));
     }
 
+    @Operation(summary = "Accept offer")
     @PatchMapping("/{offerId}/accept")
     public ResponseEntity<OfferResponse> acceptOffer(@PathVariable UUID offerId) {
         return ResponseEntity.ok(offerService.acceptOffer(offerId));
     }
 
+    @Operation(summary = "Decline offer")
     @PatchMapping("/{offerId}/decline")
     public ResponseEntity<OfferResponse> declineOffer(@PathVariable UUID offerId) {
         return ResponseEntity.ok(offerService.declineOffer(offerId));
     }
 
+    @Operation(summary = "Withdraw offer")
     @PatchMapping("/{offerId}/withdraw")
     public ResponseEntity<OfferResponse> withdrawOffer(@PathVariable UUID offerId) {
         return ResponseEntity.ok(offerService.withdrawOffer(offerId));
     }
 
+    @Operation(summary = "Hire")
     @PostMapping("/{offerId}/hire")
     public ResponseEntity<HireResponse> hire(
             @PathVariable UUID offerId,

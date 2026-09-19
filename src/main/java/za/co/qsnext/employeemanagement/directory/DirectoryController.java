@@ -1,5 +1,8 @@
 package za.co.qsnext.employeemanagement.directory;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.Operation;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -14,6 +17,7 @@ import za.co.qsnext.employeemanagement.directory.dto.DirectoryEmployeeResponse;
 import java.util.List;
 import java.util.UUID;
 
+@Tag(name = "Directory", description = "Company employee directory search.")
 @RestController
 @RequestMapping("/api/v1/directory")
 @PreAuthorize("hasAuthority('DIRECTORY_READ')")
@@ -25,6 +29,7 @@ public class DirectoryController {
         this.directoryService = directoryService;
     }
 
+    @Operation(summary = "Search employees")
     @GetMapping("/employees")
     public ResponseEntity<Page<DirectoryEmployeeResponse>> searchEmployees(
             @RequestParam(required = false) String query,
@@ -36,6 +41,7 @@ public class DirectoryController {
         );
     }
 
+    @Operation(summary = "Get employee profile")
     @GetMapping("/employees/{employeeId}")
     public ResponseEntity<DirectoryEmployeeResponse> getEmployeeProfile(
             @PathVariable UUID employeeId
@@ -43,6 +49,7 @@ public class DirectoryController {
         return ResponseEntity.ok(directoryService.getEmployeeProfile(employeeId));
     }
 
+    @Operation(summary = "Get manager chain")
     @GetMapping("/employees/{employeeId}/manager-chain")
     public ResponseEntity<List<DirectoryEmployeeResponse>> getManagerChain(
             @PathVariable UUID employeeId
@@ -50,6 +57,7 @@ public class DirectoryController {
         return ResponseEntity.ok(directoryService.getManagerChain(employeeId));
     }
 
+    @Operation(summary = "Get direct reports")
     @GetMapping("/employees/{employeeId}/direct-reports")
     public ResponseEntity<List<DirectoryEmployeeResponse>> getDirectReports(
             @PathVariable UUID employeeId
@@ -57,6 +65,7 @@ public class DirectoryController {
         return ResponseEntity.ok(directoryService.getDirectReports(employeeId));
     }
 
+    @Operation(summary = "Search departments")
     @GetMapping("/departments")
     public ResponseEntity<Page<DirectoryDepartmentResponse>> searchDepartments(
             @RequestParam(required = false) String query,

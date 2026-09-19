@@ -1,5 +1,8 @@
 package za.co.qsnext.employeemanagement.compliance;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.Operation;
+
 import jakarta.validation.Valid;
 
 import org.springframework.http.HttpStatus;
@@ -18,6 +21,7 @@ import za.co.qsnext.employeemanagement.security.CustomUserDetails;
 import java.util.List;
 import java.util.UUID;
 
+@Tag(name = "Compliance", description = "Compliance requirements and employee compliance records.")
 @RestController
 @RequestMapping("/api/v1/compliance")
 public class ComplianceController {
@@ -31,6 +35,7 @@ public class ComplianceController {
     }
 
     @PreAuthorize("hasAuthority('COMPLIANCE_MANAGE')")
+    @Operation(summary = "Create requirement")
     @PostMapping("/requirements")
     public ResponseEntity<ComplianceRequirementResponse> createRequirement(
             @Valid @RequestBody CreateComplianceRequirementRequest request
@@ -44,12 +49,14 @@ public class ComplianceController {
     }
 
     @PreAuthorize("hasAnyAuthority('COMPLIANCE_MANAGE', 'COMPLIANCE_READ')")
+    @Operation(summary = "Get active requirements")
     @GetMapping("/requirements")
     public ResponseEntity<List<ComplianceRequirementResponse>> getActiveRequirements() {
         return ResponseEntity.ok(complianceService.getActiveRequirements());
     }
 
     @PreAuthorize("hasAuthority('COMPLIANCE_MANAGE')")
+    @Operation(summary = "Assign to employee")
     @PostMapping("/employees/{employeeId}/records")
     public ResponseEntity<ComplianceRecordResponse> assignToEmployee(
             @PathVariable UUID employeeId,
@@ -61,6 +68,7 @@ public class ComplianceController {
     }
 
     @PreAuthorize("hasAnyAuthority('COMPLIANCE_MANAGE', 'COMPLIANCE_READ')")
+    @Operation(summary = "Get records for employee")
     @GetMapping("/employees/{employeeId}/records")
     public ResponseEntity<List<ComplianceRecordResponse>> getRecordsForEmployee(
             Authentication authentication,
@@ -74,6 +82,7 @@ public class ComplianceController {
     }
 
     @PreAuthorize("hasAuthority('COMPLIANCE_READ')")
+    @Operation(summary = "Get my records")
     @GetMapping("/my-records")
     public ResponseEntity<List<ComplianceRecordResponse>> getMyRecords(Authentication authentication) {
         CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
@@ -82,6 +91,7 @@ public class ComplianceController {
     }
 
     @PreAuthorize("hasAnyAuthority('COMPLIANCE_MANAGE', 'COMPLIANCE_READ')")
+    @Operation(summary = "Complete record")
     @PatchMapping("/records/{recordId}/complete")
     public ResponseEntity<ComplianceRecordResponse> completeRecord(
             Authentication authentication,
@@ -98,6 +108,7 @@ public class ComplianceController {
     }
 
     @PreAuthorize("hasAuthority('COMPLIANCE_MANAGE')")
+    @Operation(summary = "Get expiring records")
     @GetMapping("/expiring")
     public ResponseEntity<List<ComplianceRecordResponse>> getExpiringRecords(
             @RequestParam(defaultValue = "30") int withinDays
@@ -106,6 +117,7 @@ public class ComplianceController {
     }
 
     @PreAuthorize("hasAuthority('COMPLIANCE_MANAGE')")
+    @Operation(summary = "Get requirement summary")
     @GetMapping("/requirements/{requirementId}/summary")
     public ResponseEntity<ComplianceRequirementSummaryResponse> getRequirementSummary(
             @PathVariable UUID requirementId

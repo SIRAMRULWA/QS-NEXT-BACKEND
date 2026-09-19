@@ -1,5 +1,8 @@
 package za.co.qsnext.employeemanagement.scheduling;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.Operation;
+
 import jakarta.validation.Valid;
 
 import org.springframework.format.annotation.DateTimeFormat;
@@ -19,6 +22,7 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
+@Tag(name = "Scheduling", description = "Work schedules, shifts and shift assignments.")
 @RestController
 @RequestMapping("/api/v1/scheduling")
 public class ScheduleController {
@@ -30,6 +34,7 @@ public class ScheduleController {
     }
 
     @PreAuthorize("hasAuthority('SCHEDULE_MANAGE')")
+    @Operation(summary = "Create shift")
     @PostMapping("/shifts")
     public ResponseEntity<ShiftResponse> createShift(
             @Valid @RequestBody CreateShiftRequest request
@@ -42,12 +47,14 @@ public class ScheduleController {
     }
 
     @PreAuthorize("hasAuthority('SCHEDULE_READ')")
+    @Operation(summary = "Get all shifts")
     @GetMapping("/shifts")
     public ResponseEntity<List<ShiftResponse>> getAllShifts() {
         return ResponseEntity.ok(scheduleService.getAllShifts());
     }
 
     @PreAuthorize("hasAuthority('SCHEDULE_MANAGE')")
+    @Operation(summary = "Assign shift")
     @PostMapping("/assignments")
     public ResponseEntity<ShiftAssignmentResponse> assignShift(
             Authentication authentication,
@@ -63,6 +70,7 @@ public class ScheduleController {
     }
 
     @PreAuthorize("hasAuthority('SCHEDULE_MANAGE')")
+    @Operation(summary = "Cancel assignment")
     @DeleteMapping("/assignments/{assignmentId}")
     public ResponseEntity<Void> cancelAssignment(@PathVariable UUID assignmentId) {
         scheduleService.cancelAssignment(assignmentId);
@@ -70,6 +78,7 @@ public class ScheduleController {
     }
 
     @PreAuthorize("hasAuthority('SCHEDULE_MANAGE')")
+    @Operation(summary = "Get employee schedule")
     @GetMapping("/employees/{employeeId}")
     public ResponseEntity<List<ShiftAssignmentResponse>> getEmployeeSchedule(
             @PathVariable UUID employeeId,
@@ -80,6 +89,7 @@ public class ScheduleController {
     }
 
     @PreAuthorize("hasAuthority('SCHEDULE_READ')")
+    @Operation(summary = "Get own schedule")
     @GetMapping("/my-schedule")
     public ResponseEntity<List<ShiftAssignmentResponse>> getOwnSchedule(
             Authentication authentication,

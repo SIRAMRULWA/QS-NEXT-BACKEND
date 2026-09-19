@@ -1,5 +1,9 @@
 package za.co.qsnext.employeemanagement.auth;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirements;
+
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 
@@ -11,6 +15,7 @@ import org.springframework.web.bind.annotation.*;
 import za.co.qsnext.employeemanagement.auth.dto.*;
 import za.co.qsnext.employeemanagement.security.CustomUserDetails;
 
+@Tag(name = "Authentication", description = "Registration, login, JWT tokens, password reset and account security.")
 @RestController
 @RequestMapping("/api/v1/auth")
 public class AuthController {
@@ -23,6 +28,8 @@ public class AuthController {
         this.authService = authService;
     }
 
+    @Operation(summary = "Login")
+    @SecurityRequirements
     @PostMapping("/login")
     public ResponseEntity<LoginResponse> login(
             @Valid @RequestBody LoginRequest request,
@@ -34,6 +41,8 @@ public class AuthController {
         );
     }
 
+    @Operation(summary = "Register")
+    @SecurityRequirements
     @PostMapping("/register")
     public ResponseEntity<LoginResponse> register(
             @Valid @RequestBody RegisterRequest request,
@@ -47,6 +56,8 @@ public class AuthController {
                 );
     }
 
+    @Operation(summary = "Refresh")
+    @SecurityRequirements
     @PostMapping("/refresh")
     public ResponseEntity<LoginResponse> refresh(
             @Valid @RequestBody RefreshTokenRequest request,
@@ -58,6 +69,7 @@ public class AuthController {
         );
     }
 
+    @Operation(summary = "Logout")
     @PostMapping("/logout")
     public ResponseEntity<Void> logout(
             @Valid @RequestBody RefreshTokenRequest request,
@@ -69,6 +81,7 @@ public class AuthController {
         return ResponseEntity.noContent().build();
     }
 
+    @Operation(summary = "Change password")
     @PostMapping("/change-password")
     public ResponseEntity<Void> changePassword(
             Authentication authentication,
@@ -88,6 +101,8 @@ public class AuthController {
         return ResponseEntity.noContent().build();
     }
 
+    @Operation(summary = "Forgot password")
+    @SecurityRequirements
     @PostMapping("/forgot-password")
     public ResponseEntity<Void> forgotPassword(
             @Valid @RequestBody ForgotPasswordRequest request
@@ -98,6 +113,8 @@ public class AuthController {
         return ResponseEntity.accepted().build();
     }
 
+    @Operation(summary = "Reset password")
+    @SecurityRequirements
     @PostMapping("/reset-password")
     public ResponseEntity<Void> resetPassword(
             @Valid @RequestBody ResetPasswordRequest request

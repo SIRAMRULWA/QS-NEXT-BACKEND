@@ -1,5 +1,7 @@
 package za.co.qsnext.employeemanagement.selfservice;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
+
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -35,6 +37,7 @@ import za.co.qsnext.employeemanagement.timesheet.dto.TimesheetResponse;
 
 import java.util.UUID;
 
+@Tag(name = "Self-Service", description = "Authenticated employees managing their own profile, leave, attendance and timesheets.")
 @RestController
 @RequestMapping("/api/v1/self-service")
 public class SelfServiceController {

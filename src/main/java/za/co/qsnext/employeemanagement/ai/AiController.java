@@ -1,5 +1,8 @@
 package za.co.qsnext.employeemanagement.ai;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.Operation;
+
 import jakarta.validation.Valid;
 
 import org.springframework.data.domain.Page;
@@ -16,6 +19,7 @@ import za.co.qsnext.employeemanagement.security.CustomUserDetails;
 
 import java.util.UUID;
 
+@Tag(name = "AI", description = "AI-powered HR capabilities: assistant, document summarization, recruitment drafting, recommendations.")
 @RestController
 @RequestMapping("/api/v1/ai")
 public class AiController {
@@ -29,6 +33,7 @@ public class AiController {
     }
 
     @PreAuthorize("hasAuthority('AI_ASSISTANT_USE')")
+    @Operation(summary = "Ask hr assistant")
     @PostMapping("/assistant")
     public ResponseEntity<AiSuggestionResponse> askHrAssistant(
             Authentication authentication,
@@ -39,6 +44,7 @@ public class AiController {
     }
 
     @PreAuthorize("hasAuthority('AI_HR_TOOLS_USE')")
+    @Operation(summary = "Summarize document")
     @PostMapping("/documents/{documentId}/summarize")
     public ResponseEntity<AiSuggestionResponse> summarizeDocument(
             Authentication authentication,
@@ -49,6 +55,7 @@ public class AiController {
     }
 
     @PreAuthorize("hasAuthority('AI_HR_TOOLS_USE')")
+    @Operation(summary = "Generate job description")
     @PostMapping("/recruitment/job-requisitions/{jobRequisitionId}/generate-description")
     public ResponseEntity<AiSuggestionResponse> generateJobDescription(
             Authentication authentication,
@@ -59,6 +66,7 @@ public class AiController {
     }
 
     @PreAuthorize("hasAuthority('AI_HR_TOOLS_USE')")
+    @Operation(summary = "Match candidates")
     @PostMapping("/recruitment/job-postings/{jobPostingId}/match-candidates")
     public ResponseEntity<AiSuggestionResponse> matchCandidates(
             Authentication authentication,
@@ -69,6 +77,7 @@ public class AiController {
     }
 
     @PreAuthorize("hasAnyAuthority('AI_RECOMMENDATIONS_READ', 'AI_HR_TOOLS_USE')")
+    @Operation(summary = "Recommend skills")
     @PostMapping("/employees/{employeeId}/recommend-skills")
     public ResponseEntity<AiSuggestionResponse> recommendSkills(
             Authentication authentication,
@@ -80,6 +89,7 @@ public class AiController {
     }
 
     @PreAuthorize("hasAnyAuthority('AI_RECOMMENDATIONS_READ', 'AI_HR_TOOLS_USE')")
+    @Operation(summary = "Recommend learning")
     @PostMapping("/employees/{employeeId}/recommend-learning")
     public ResponseEntity<AiSuggestionResponse> recommendLearning(
             Authentication authentication,
@@ -91,6 +101,7 @@ public class AiController {
     }
 
     @PreAuthorize("hasAuthority('AI_HR_TOOLS_USE')")
+    @Operation(summary = "Explain headcount analytics")
     @PostMapping("/analytics/headcount/explain")
     public ResponseEntity<AiSuggestionResponse> explainHeadcountAnalytics(Authentication authentication) {
         UUID userId = ((CustomUserDetails) authentication.getPrincipal()).getUserId();
@@ -98,6 +109,7 @@ public class AiController {
     }
 
     @PreAuthorize("hasAnyAuthority('AI_ASSISTANT_USE', 'AI_RECOMMENDATIONS_READ', 'AI_HR_TOOLS_USE')")
+    @Operation(summary = "Get suggestion")
     @GetMapping("/suggestions/{suggestionId}")
     public ResponseEntity<AiSuggestionResponse> getSuggestion(
             Authentication authentication,
@@ -109,6 +121,7 @@ public class AiController {
     }
 
     @PreAuthorize("hasAnyAuthority('AI_ASSISTANT_USE', 'AI_RECOMMENDATIONS_READ', 'AI_HR_TOOLS_USE')")
+    @Operation(summary = "Get my suggestions")
     @GetMapping("/my-suggestions")
     public ResponseEntity<Page<AiSuggestionResponse>> getMySuggestions(
             Authentication authentication,

@@ -1,5 +1,8 @@
 package za.co.qsnext.employeemanagement.audit;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.Operation;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -21,6 +24,7 @@ import java.util.UUID;
  * only to ADMIN by default - see the seed migration) since audit records
  * can reveal who did what across the whole platform.
  */
+@Tag(name = "Audit", description = "Centralized audit log of sensitive actions across the platform.")
 @RestController
 @RequestMapping("/api/v1/audit")
 public class AuditController {
@@ -32,6 +36,7 @@ public class AuditController {
     }
 
     @PreAuthorize("hasAuthority('AUDIT_READ')")
+    @Operation(summary = "Get by user")
     @GetMapping("/user/{userId}")
     public ResponseEntity<Page<AuditLogResponse>> getByUser(
             @PathVariable UUID userId,
@@ -44,6 +49,7 @@ public class AuditController {
     }
 
     @PreAuthorize("hasAuthority('AUDIT_READ')")
+    @Operation(summary = "Get by entity")
     @GetMapping("/entity/{entityType}/{entityId}")
     public ResponseEntity<Page<AuditLogResponse>> getByEntity(
             @PathVariable String entityType,
@@ -57,6 +63,7 @@ public class AuditController {
     }
 
     @PreAuthorize("hasAuthority('AUDIT_READ')")
+    @Operation(summary = "Get by action")
     @GetMapping("/action/{action}")
     public ResponseEntity<Page<AuditLogResponse>> getByAction(
             @PathVariable String action,

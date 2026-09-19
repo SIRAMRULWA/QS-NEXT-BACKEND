@@ -1,5 +1,8 @@
 package za.co.qsnext.employeemanagement.recognition;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.Operation;
+
 import jakarta.validation.Valid;
 
 import org.springframework.http.HttpStatus;
@@ -18,6 +21,7 @@ import za.co.qsnext.employeemanagement.security.CustomUserDetails;
 import java.util.List;
 import java.util.UUID;
 
+@Tag(name = "Recognition", description = "Peer recognition and points.")
 @RestController
 @RequestMapping("/api/v1/recognition")
 public class RecognitionController {
@@ -31,6 +35,7 @@ public class RecognitionController {
     }
 
     @PreAuthorize("hasAuthority('RECOGNITION_MANAGE')")
+    @Operation(summary = "Create type")
     @PostMapping("/types")
     public ResponseEntity<RecognitionTypeResponse> createType(
             @Valid @RequestBody CreateRecognitionTypeRequest request
@@ -41,12 +46,14 @@ public class RecognitionController {
     }
 
     @PreAuthorize("hasAnyAuthority('RECOGNITION_MANAGE', 'RECOGNITION_GIVE')")
+    @Operation(summary = "Get active types")
     @GetMapping("/types")
     public ResponseEntity<List<RecognitionTypeResponse>> getActiveTypes() {
         return ResponseEntity.ok(recognitionService.getActiveTypes());
     }
 
     @PreAuthorize("hasAuthority('RECOGNITION_GIVE')")
+    @Operation(summary = "Give recognition")
     @PostMapping
     public ResponseEntity<RecognitionResponse> giveRecognition(
             Authentication authentication,
@@ -63,6 +70,7 @@ public class RecognitionController {
     }
 
     @PreAuthorize("hasAnyAuthority('RECOGNITION_MANAGE', 'RECOGNITION_GIVE')")
+    @Operation(summary = "Get received by employee")
     @GetMapping("/employees/{employeeId}")
     public ResponseEntity<List<RecognitionResponse>> getReceivedByEmployee(
             Authentication authentication,
@@ -76,6 +84,7 @@ public class RecognitionController {
     }
 
     @PreAuthorize("hasAuthority('RECOGNITION_GIVE')")
+    @Operation(summary = "Get given by me")
     @GetMapping("/given")
     public ResponseEntity<List<RecognitionResponse>> getGivenByMe(Authentication authentication) {
         CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
@@ -84,12 +93,14 @@ public class RecognitionController {
     }
 
     @PreAuthorize("hasAnyAuthority('RECOGNITION_MANAGE', 'RECOGNITION_GIVE')")
+    @Operation(summary = "Get points total")
     @GetMapping("/employees/{employeeId}/points-total")
     public ResponseEntity<Long> getPointsTotal(@PathVariable UUID employeeId) {
         return ResponseEntity.ok(recognitionService.getPointsTotalForEmployee(employeeId));
     }
 
     @PreAuthorize("hasAnyAuthority('RECOGNITION_MANAGE', 'RECOGNITION_GIVE')")
+    @Operation(summary = "Get leaderboard")
     @GetMapping("/leaderboard")
     public ResponseEntity<List<LeaderboardEntryResponse>> getLeaderboard(
             @RequestParam(defaultValue = "10") int limit

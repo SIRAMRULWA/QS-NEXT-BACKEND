@@ -1,5 +1,8 @@
 package za.co.qsnext.employeemanagement.learning;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.Operation;
+
 import jakarta.validation.Valid;
 
 import org.springframework.http.HttpStatus;
@@ -17,6 +20,7 @@ import za.co.qsnext.employeemanagement.security.CustomUserDetails;
 import java.util.List;
 import java.util.UUID;
 
+@Tag(name = "Skills", description = "Skill catalog management.")
 @RestController
 @RequestMapping("/api/v1/skills")
 public class SkillController {
@@ -30,6 +34,7 @@ public class SkillController {
     }
 
     @PreAuthorize("hasAuthority('LEARNING_MANAGE')")
+    @Operation(summary = "Create skill")
     @PostMapping
     public ResponseEntity<SkillResponse> createSkill(@Valid @RequestBody CreateSkillRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED)
@@ -37,12 +42,14 @@ public class SkillController {
     }
 
     @PreAuthorize("hasAnyAuthority('LEARNING_MANAGE', 'LEARNING_READ')")
+    @Operation(summary = "Get all skills")
     @GetMapping
     public ResponseEntity<List<SkillResponse>> getAllSkills() {
         return ResponseEntity.ok(skillService.getAllSkills());
     }
 
     @PreAuthorize("hasAnyAuthority('LEARNING_MANAGE', 'LEARNING_READ')")
+    @Operation(summary = "Assign skill to employee")
     @PostMapping("/employees/{employeeId}")
     public ResponseEntity<EmployeeSkillResponse> assignSkillToEmployee(
             Authentication authentication,
@@ -58,6 +65,7 @@ public class SkillController {
     }
 
     @PreAuthorize("hasAnyAuthority('LEARNING_MANAGE', 'LEARNING_READ')")
+    @Operation(summary = "Get employee skills")
     @GetMapping("/employees/{employeeId}")
     public ResponseEntity<List<EmployeeSkillResponse>> getEmployeeSkills(
             Authentication authentication,

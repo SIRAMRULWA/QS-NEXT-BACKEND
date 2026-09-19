@@ -1,5 +1,8 @@
 package za.co.qsnext.employeemanagement.esignature;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.Operation;
+
 import jakarta.validation.Valid;
 
 import org.springframework.http.HttpStatus;
@@ -16,6 +19,7 @@ import za.co.qsnext.employeemanagement.security.CustomUserDetails;
 import java.util.List;
 import java.util.UUID;
 
+@Tag(name = "E-Signature", description = "Document e-signature requests and signing.")
 @RestController
 @RequestMapping("/api/v1/esignature")
 public class SignatureRequestController {
@@ -29,6 +33,7 @@ public class SignatureRequestController {
     }
 
     @PreAuthorize("hasAuthority('ESIGNATURE_MANAGE')")
+    @Operation(summary = "Create request")
     @PostMapping("/requests")
     public ResponseEntity<SignatureRequestResponse> createRequest(
             Authentication authentication,
@@ -45,6 +50,7 @@ public class SignatureRequestController {
     }
 
     @PreAuthorize("hasAnyAuthority('ESIGNATURE_MANAGE', 'ESIGNATURE_SIGN')")
+    @Operation(summary = "Get by id")
     @GetMapping("/requests/{requestId}")
     public ResponseEntity<SignatureRequestResponse> getById(
             Authentication authentication,
@@ -58,6 +64,7 @@ public class SignatureRequestController {
     }
 
     @PreAuthorize("hasAuthority('ESIGNATURE_SIGN')")
+    @Operation(summary = "Get my pending signatures")
     @GetMapping("/my-signatures")
     public ResponseEntity<List<SignatureRequestResponse>> getMyPendingSignatures(
             Authentication authentication
@@ -68,6 +75,7 @@ public class SignatureRequestController {
     }
 
     @PreAuthorize("hasAuthority('ESIGNATURE_SIGN')")
+    @Operation(summary = "Accept")
     @PatchMapping("/signers/{signerId}/accept")
     public ResponseEntity<SignatureRequestResponse> accept(
             Authentication authentication,
@@ -79,6 +87,7 @@ public class SignatureRequestController {
     }
 
     @PreAuthorize("hasAuthority('ESIGNATURE_SIGN')")
+    @Operation(summary = "Decline")
     @PatchMapping("/signers/{signerId}/decline")
     public ResponseEntity<SignatureRequestResponse> decline(
             Authentication authentication,
@@ -92,6 +101,7 @@ public class SignatureRequestController {
     }
 
     @PreAuthorize("hasAuthority('ESIGNATURE_MANAGE')")
+    @Operation(summary = "Cancel")
     @PatchMapping("/requests/{requestId}/cancel")
     public ResponseEntity<SignatureRequestResponse> cancel(@PathVariable UUID requestId) {
         return ResponseEntity.ok(signatureRequestService.cancel(requestId));
