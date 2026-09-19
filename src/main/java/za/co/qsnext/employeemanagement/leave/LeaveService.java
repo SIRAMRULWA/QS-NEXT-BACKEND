@@ -12,6 +12,7 @@ import za.co.qsnext.employeemanagement.employee.EmployeeService;
 import za.co.qsnext.employeemanagement.exception.BusinessRuleException;
 import za.co.qsnext.employeemanagement.exception.EmployeeNotFoundException;
 import za.co.qsnext.employeemanagement.exception.LeaveRequestNotFoundException;
+import za.co.qsnext.employeemanagement.leave.dto.LeaveBalanceResponse;
 import za.co.qsnext.employeemanagement.leave.dto.LeaveResponse;
 import za.co.qsnext.employeemanagement.notification.NotificationPublisher;
 import za.co.qsnext.employeemanagement.notification.NotificationType;
@@ -22,6 +23,7 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -319,6 +321,26 @@ public class LeaveService {
                         pageable
                 )
                 .map(LeaveResponse::from);
+    }
+
+    @Transactional(readOnly = true)
+    public List<LeaveBalanceResponse> getOwnLeaveBalances(
+            UUID userId,
+            Integer leaveYear
+    ) {
+        Employee employee = employeeRepository
+                .findByUserId(userId)
+                .orElseThrow(() ->
+                        new EmployeeNotFoundException(
+                                "Employee profile not found"
+                        )
+                );
+
+        return leaveBalanceRepository
+                .findByEmployeeIdAndLeaveYear(employee.getId(), leaveYear)
+                .stream()
+                .map(LeaveBalanceResponse::from)
+                .toList();
     }
 
     @Transactional

@@ -35,13 +35,16 @@ class NotificationConsumerTest {
     private UserRepository userRepository;
     @Mock
     private EmailService emailService;
+    @Mock
+    private PushNotificationSender pushNotificationSender;
 
     private NotificationConsumer notificationConsumer;
 
     @BeforeEach
     void setUp() {
         notificationConsumer = new NotificationConsumer(
-                notificationRepository, notificationPreferenceRepository, userRepository, emailService);
+                notificationRepository, notificationPreferenceRepository, userRepository, emailService,
+                pushNotificationSender);
     }
 
     private User userWithId(String email) {
@@ -78,6 +81,24 @@ class NotificationConsumerTest {
                 eq("jane.doe@qsnext.co.za"),
                 eq(Map.of("title", "Title", "message", "Message"))
         );
+    }
+
+    @Test
+    void onNotification_alwaysAttemptsPush_regardlessOfInAppOrEmailPreferences() {
+        User user = userWithId("jane.doe@qsnext.co.za");
+
+        NotificationPreference preference = new NotificationPreference(user.getId());
+        preference.update(false, false);
+
+        when(notificationPreferenceRepository.findByUserId(user.getId()))
+                .thenReturn(Optional.of(preference));
+
+        NotificationEvent event = new NotificationEvent(
+                user.getId(), NotificationType.LEAVE_REQUEST_APPROVED, "Title", "Message");
+
+        notificationConsumer.onNotification(event);
+
+        verify(pushNotificationSender).send(event);
     }
 
     @Test

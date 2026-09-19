@@ -13,10 +13,13 @@ import java.util.Map;
 
 /**
  * Turns a {@link NotificationEvent} into an in-app {@link Notification}
- * row and, if the recipient allows it, a queued email. Runs only after
- * the business transaction that published the event actually commits -
- * e.g. a leave request approval that gets rolled back must not notify
- * the employee that it was approved.
+ * row, a queued email if the recipient allows it, and a push
+ * notification to any device they have registered (see {@code
+ * DeviceRegistryPushNotificationSender} - push has no separate
+ * enable/disable preference, since registering a device is itself an
+ * opt-in). Runs only after the business transaction that published the
+ * event actually commits - e.g. a leave request approval that gets
+ * rolled back must not notify the employee that it was approved.
  */
 @Component
 public class NotificationConsumer {
@@ -25,17 +28,20 @@ public class NotificationConsumer {
     private final NotificationPreferenceRepository notificationPreferenceRepository;
     private final UserRepository userRepository;
     private final EmailService emailService;
+    private final PushNotificationSender pushNotificationSender;
 
     public NotificationConsumer(
             NotificationRepository notificationRepository,
             NotificationPreferenceRepository notificationPreferenceRepository,
             UserRepository userRepository,
-            EmailService emailService
+            EmailService emailService,
+            PushNotificationSender pushNotificationSender
     ) {
         this.notificationRepository = notificationRepository;
         this.notificationPreferenceRepository = notificationPreferenceRepository;
         this.userRepository = userRepository;
         this.emailService = emailService;
+        this.pushNotificationSender = pushNotificationSender;
     }
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
@@ -66,5 +72,7 @@ public class NotificationConsumer {
                             Map.of("title", event.title(), "message", event.message())
                     ));
         }
+
+        pushNotificationSender.send(event);
     }
 }

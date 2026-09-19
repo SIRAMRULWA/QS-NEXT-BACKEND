@@ -186,6 +186,19 @@ public class GlobalExceptionHandler {
         );
     }
 
+    @ExceptionHandler(MobileDeviceNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleMobileDeviceNotFound(
+            MobileDeviceNotFoundException exception,
+            HttpServletRequest request
+    ) {
+        return buildResponse(
+                HttpStatus.NOT_FOUND,
+                "MOBILE_DEVICE_NOT_FOUND",
+                exception.getMessage(),
+                request.getRequestURI()
+        );
+    }
+
     @ExceptionHandler(AiNotFoundException.class)
     public ResponseEntity<ErrorResponse> handleAiNotFound(
             AiNotFoundException exception,
