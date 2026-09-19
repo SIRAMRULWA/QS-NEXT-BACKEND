@@ -11,7 +11,8 @@ import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.serializer.GenericJacksonJsonRedisSerializer;
 import org.springframework.data.redis.serializer.RedisSerializationContext;
 
-import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.databind.jsontype.BasicPolymorphicTypeValidator;
+import tools.jackson.databind.jsontype.PolymorphicTypeValidator;
 
 import java.time.Duration;
 import java.util.Map;
@@ -21,14 +22,19 @@ import java.util.Map;
  * lookups are cached (see the per-cache config below) - this is not a
  * blanket cache-everything setup.
  *
- * Values are serialized with a dedicated Jackson ObjectMapper (isolated
- * from the application's main HTTP ObjectMapper) configured for direct
- * field access, since the cached types (JPA entities and the
- * CustomUserDetails record) have no setters. Cached types are limited to
- * ones built entirely from concrete JDK types (UUID/String/boolean/etc.)
- * with no lazy Hibernate collections in the serialized graph, so no
- * global default-typing is needed - GenericJacksonJsonRedisSerializer
- * already embeds the concrete top-level type itself.
+ * Values are serialized via GenericJacksonJsonRedisSerializer's own
+ * builder (the first-party recipe for this, rather than hand-configuring
+ * an ObjectMapper) with a dedicated Jackson mapper isolated from the
+ * application's main HTTP ObjectMapper: field-visibility ANY, since the
+ * cached types (JPA entities and the CustomUserDetails record) have no
+ * setters, and default typing scoped to this application's own package
+ * so the cache manager can tell a stored value's concrete class apart
+ * from the generic Object it's handed as (without that, every read
+ * would deserialize to a plain LinkedHashMap instead of the real type -
+ * caught by the Testcontainers-backed caching tests, not guessable from
+ * a signature alone). The validator only trusts our own classes, not
+ * arbitrary types, to avoid the classic polymorphic-deserialization
+ * gadget-chain risk.
  */
 @Configuration
 @EnableCaching
@@ -49,14 +55,20 @@ public class RedisConfig {
             RedisConnectionFactory connectionFactory
     ) {
 
-        JsonMapper cacheObjectMapper = JsonMapper.builder()
-                .changeDefaultVisibility(visibility -> visibility
-                        .withFieldVisibility(JsonAutoDetect.Visibility.ANY)
-                )
+        PolymorphicTypeValidator typeValidator = BasicPolymorphicTypeValidator
+                .builder()
+                .allowIfSubType("za.co.qsnext.employeemanagement.")
                 .build();
 
         GenericJacksonJsonRedisSerializer serializer =
-                new GenericJacksonJsonRedisSerializer(cacheObjectMapper);
+                GenericJacksonJsonRedisSerializer.builder()
+                        .enableDefaultTyping(typeValidator)
+                        .customize(mapperBuilder -> mapperBuilder
+                                .changeDefaultVisibility(visibility -> visibility
+                                        .withFieldVisibility(JsonAutoDetect.Visibility.ANY)
+                                )
+                        )
+                        .build();
 
         RedisSerializationContext.SerializationPair<Object> valueSerialization =
                 RedisSerializationContext.SerializationPair.fromSerializer(serializer);
