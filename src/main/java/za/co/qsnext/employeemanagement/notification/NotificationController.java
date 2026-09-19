@@ -1,14 +1,20 @@
 package za.co.qsnext.employeemanagement.notification;
 
+import jakarta.validation.Valid;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
+import za.co.qsnext.employeemanagement.notification.dto.NotificationPreferenceResponse;
 import za.co.qsnext.employeemanagement.notification.dto.NotificationResponse;
+import za.co.qsnext.employeemanagement.notification.dto.UpdateNotificationPreferenceRequest;
+import za.co.qsnext.employeemanagement.security.CustomUserDetails;
 
 import java.util.UUID;
 
@@ -98,6 +104,39 @@ public class NotificationController {
         return ResponseEntity.ok(
                 notificationService.markAsUnread(
                         notificationId
+                )
+        );
+    }
+
+    @PreAuthorize("isAuthenticated()")
+    @GetMapping("/preferences")
+    public ResponseEntity<NotificationPreferenceResponse> getOwnPreference(
+            Authentication authentication
+    ) {
+
+        CustomUserDetails userDetails =
+                (CustomUserDetails) authentication.getPrincipal();
+
+        return ResponseEntity.ok(
+                notificationService.getPreference(userDetails.getUserId())
+        );
+    }
+
+    @PreAuthorize("isAuthenticated()")
+    @PutMapping("/preferences")
+    public ResponseEntity<NotificationPreferenceResponse> updateOwnPreference(
+            Authentication authentication,
+            @Valid @RequestBody UpdateNotificationPreferenceRequest request
+    ) {
+
+        CustomUserDetails userDetails =
+                (CustomUserDetails) authentication.getPrincipal();
+
+        return ResponseEntity.ok(
+                notificationService.updatePreference(
+                        userDetails.getUserId(),
+                        request.inAppEnabled(),
+                        request.emailEnabled()
                 )
         );
     }

@@ -11,6 +11,8 @@ import za.co.qsnext.employeemanagement.exception.BusinessRuleException;
 import za.co.qsnext.employeemanagement.exception.EmployeeNotFoundException;
 import za.co.qsnext.employeemanagement.exception.LeaveRequestNotFoundException;
 import za.co.qsnext.employeemanagement.leave.dto.LeaveResponse;
+import za.co.qsnext.employeemanagement.notification.NotificationPublisher;
+import za.co.qsnext.employeemanagement.notification.NotificationType;
 import za.co.qsnext.employeemanagement.user.UserService;
 
 import java.math.BigDecimal;
@@ -26,18 +28,22 @@ public class LeaveService {
     private final EmployeeService employeeService;
     private final UserService userService;
     private final EmployeeRepository employeeRepository;
+    private final NotificationPublisher notificationPublisher;
 
     public LeaveService(
             LeaveRequestRepository leaveRequestRepository,
             LeaveBalanceRepository leaveBalanceRepository,
             EmployeeService employeeService,
-            UserService userService, EmployeeRepository employeeRepository
+            UserService userService,
+            EmployeeRepository employeeRepository,
+            NotificationPublisher notificationPublisher
     ) {
         this.leaveRequestRepository = leaveRequestRepository;
         this.leaveBalanceRepository = leaveBalanceRepository;
         this.employeeService = employeeService;
         this.userService = userService;
         this.employeeRepository = employeeRepository;
+        this.notificationPublisher = notificationPublisher;
     }
 
     public LeaveRequest getById(UUID leaveRequestId) {
@@ -170,6 +176,15 @@ public class LeaveService {
 
         leaveRequest.approve(approverId);
 
+        notifyEmployee(
+                leaveRequest.getEmployeeId(),
+                NotificationType.LEAVE_REQUEST_APPROVED,
+                "Leave request approved",
+                "Your " + leaveRequest.getLeaveType() + " leave request from "
+                        + leaveRequest.getStartDate() + " to " + leaveRequest.getEndDate()
+                        + " has been approved."
+        );
+
         return leaveRequest;
     }
 
@@ -186,7 +201,28 @@ public class LeaveService {
 
         leaveRequest.reject();
 
+        notifyEmployee(
+                leaveRequest.getEmployeeId(),
+                NotificationType.LEAVE_REQUEST_REJECTED,
+                "Leave request rejected",
+                "Your " + leaveRequest.getLeaveType() + " leave request from "
+                        + leaveRequest.getStartDate() + " to " + leaveRequest.getEndDate()
+                        + " has been rejected."
+        );
+
         return leaveRequest;
+    }
+
+    private void notifyEmployee(
+            UUID employeeId,
+            NotificationType type,
+            String title,
+            String message
+    ) {
+        employeeRepository.findById(employeeId)
+                .ifPresent(employee -> notificationPublisher.publish(
+                        employee.getUserId(), type, title, message
+                ));
     }
 
     @Transactional

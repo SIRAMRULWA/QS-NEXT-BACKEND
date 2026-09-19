@@ -31,6 +31,19 @@ public enum EmailTemplate {
             "Your account was locked after too many failed sign-in attempts. "
                     + "It will unlock automatically at {{lockedUntil}}. If this "
                     + "was not you, please reset your password as soon as it unlocks."
+    ),
+
+    /**
+     * Generic carrier for any in-app {@code Notification} that a user has
+     * also opted into receiving by email - see the {@code notification}
+     * package. Uses the notification's own title/message rather than a
+     * type-specific template, so a new notification type doesn't need a
+     * matching email template before it can be emailed.
+     */
+    NOTIFICATION(
+            "NOTIFICATION",
+            "{{title}}",
+            "{{message}}"
     );
 
     private final String type;
@@ -51,9 +64,17 @@ public enum EmailTemplate {
         return subject;
     }
 
-    public String renderBody(Map<String, String> variables) {
+    public String renderSubject(Map<String, String> variables) {
+        return render(subject, variables);
+    }
 
-        String rendered = bodyTemplate;
+    public String renderBody(Map<String, String> variables) {
+        return render(bodyTemplate, variables);
+    }
+
+    private static String render(String template, Map<String, String> variables) {
+
+        String rendered = template;
 
         for (Map.Entry<String, String> variable : variables.entrySet()) {
             rendered = rendered.replace(

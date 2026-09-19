@@ -37,7 +37,7 @@ public class EmailService {
 
         Email email = new Email(
                 recipient,
-                template.subject(),
+                template.renderSubject(variables),
                 template.renderBody(variables),
                 template.type()
         );

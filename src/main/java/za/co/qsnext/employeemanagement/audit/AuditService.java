@@ -2,12 +2,15 @@ package za.co.qsnext.employeemanagement.audit;
 
 import jakarta.servlet.http.HttpServletRequest;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
+import za.co.qsnext.employeemanagement.audit.dto.AuditLogResponse;
 import za.co.qsnext.employeemanagement.security.SecurityUtils;
 
 import java.util.UUID;
@@ -119,5 +122,27 @@ public class AuditService {
         }
 
         return attributes.getRequest();
+    }
+
+    @Transactional(readOnly = true)
+    public Page<AuditLogResponse> getByUser(UUID userId, Pageable pageable) {
+        return auditLogRepository.findByUserId(userId, pageable)
+                .map(AuditLogResponse::from);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<AuditLogResponse> getByEntity(
+            String entityType,
+            UUID entityId,
+            Pageable pageable
+    ) {
+        return auditLogRepository.findByEntityTypeAndEntityId(entityType, entityId, pageable)
+                .map(AuditLogResponse::from);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<AuditLogResponse> getByAction(String action, Pageable pageable) {
+        return auditLogRepository.findByAction(action, pageable)
+                .map(AuditLogResponse::from);
     }
 }
