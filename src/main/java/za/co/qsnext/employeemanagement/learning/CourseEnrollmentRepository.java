@@ -1,6 +1,7 @@
 package za.co.qsnext.employeemanagement.learning;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 
 import java.util.List;
 import java.util.Optional;
@@ -13,4 +14,7 @@ public interface CourseEnrollmentRepository extends JpaRepository<CourseEnrollme
     Optional<CourseEnrollment> findByEmployeeIdAndCourseId(UUID employeeId, UUID courseId);
 
     boolean existsByEmployeeIdAndCourseId(UUID employeeId, UUID courseId);
+
+    @Query("select e.status as status, count(e) as enrollmentCount from CourseEnrollment e group by e.status")
+    List<EnrollmentStatusCount> countGroupedByStatus();
 }

@@ -3,8 +3,11 @@ package za.co.qsnext.employeemanagement.leave;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDate;
+import java.util.List;
 import java.util.UUID;
 
 public interface LeaveRequestRepository
@@ -31,5 +34,16 @@ public interface LeaveRequestRepository
             LocalDate endDate,
             LocalDate startDate,
             Pageable pageable
+    );
+
+    @Query("""
+            select l.status as status, count(l) as requestCount
+            from LeaveRequest l
+            where l.startDate <= :to and l.endDate >= :from
+            group by l.status
+            """)
+    List<LeaveStatusCount> countGroupedByStatus(
+            @Param("from") LocalDate from,
+            @Param("to") LocalDate to
     );
 }

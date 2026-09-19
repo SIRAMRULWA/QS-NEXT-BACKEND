@@ -6,6 +6,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.time.LocalDate;
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -44,4 +46,21 @@ public interface EmployeeRepository extends JpaRepository<Employee, UUID> {
             or lower(e.jobTitle) like lower(concat('%', :query, '%'))
             """)
     Page<Employee> search(@Param("query") String query, Pageable pageable);
+
+    long countByEmploymentStatus(String employmentStatus);
+
+    long countByHireDateBetween(LocalDate from, LocalDate to);
+
+    /**
+     * An imperfect proxy for "terminated in this window" - see
+     * AnalyticsService's javadoc on employee turnover for why.
+     */
+    long countByEmploymentStatusAndUpdatedAtBetween(
+            String employmentStatus, OffsetDateTime from, OffsetDateTime to);
+
+    @Query("select e.employmentStatus as status, count(e) as employeeCount from Employee e group by e.employmentStatus")
+    List<EmploymentStatusCount> countGroupedByEmploymentStatus();
+
+    @Query("select e.departmentId as departmentId, count(e) as employeeCount from Employee e group by e.departmentId")
+    List<DepartmentHeadcount> countGroupedByDepartment();
 }

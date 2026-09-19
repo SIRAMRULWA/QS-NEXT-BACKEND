@@ -14,6 +14,9 @@ public interface ExpenseClaimRepository extends JpaRepository<ExpenseClaim, UUID
 
     List<ExpenseClaim> findByEmployeeIdOrderByExpenseDateDesc(UUID employeeId);
 
+    List<ExpenseClaim> findByEmployeeIdAndExpenseDateBetweenOrderByExpenseDateDesc(
+            UUID employeeId, LocalDate from, LocalDate to);
+
     Page<ExpenseClaim> findByStatus(String status, Pageable pageable);
 
     @Query("""
@@ -24,4 +27,12 @@ public interface ExpenseClaimRepository extends JpaRepository<ExpenseClaim, UUID
             group by c.categoryId
             """)
     List<ExpenseCategorySummary> summarizeByCategory(@Param("from") LocalDate from, @Param("to") LocalDate to);
+
+    @Query("""
+            select coalesce(sum(c.amount), 0) as totalAmount, count(c) as claimCount
+            from ExpenseClaim c
+            where c.status in ('APPROVED', 'REIMBURSED')
+            and c.expenseDate between :from and :to
+            """)
+    ExpenseTrendSummary summarizeForPeriod(@Param("from") LocalDate from, @Param("to") LocalDate to);
 }

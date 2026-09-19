@@ -24,4 +24,13 @@ public interface RecognitionRepository extends JpaRepository<Recognition, UUID> 
             order by sum(r.points) desc
             """)
     List<RecognitionLeaderboardEntry> findLeaderboard(Pageable pageable);
+
+    @Query("select coalesce(sum(r.points), 0) from Recognition r")
+    long sumAllPoints();
+
+    @Query("select count(distinct r.givenByUserId) from Recognition r")
+    long countDistinctGivers();
+
+    @Query("select count(distinct r.givenToEmployeeId) from Recognition r")
+    long countDistinctRecipients();
 }
