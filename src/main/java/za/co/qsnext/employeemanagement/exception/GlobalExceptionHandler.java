@@ -184,6 +184,19 @@ public class GlobalExceptionHandler {
         );
     }
 
+    @ExceptionHandler(PayrollNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handlePayrollNotFound(
+            PayrollNotFoundException exception,
+            HttpServletRequest request
+    ) {
+        return buildResponse(
+                HttpStatus.NOT_FOUND,
+                "PAYROLL_NOT_FOUND",
+                exception.getMessage(),
+                request.getRequestURI()
+        );
+    }
+
     @ExceptionHandler(UserNotFoundException.class)
     public ResponseEntity<ErrorResponse> handleUserNotFound(
             UserNotFoundException exception,
