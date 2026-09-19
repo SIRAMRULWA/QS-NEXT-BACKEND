@@ -10,6 +10,8 @@ import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
 
 import za.co.qsnext.employeemanagement.config.RedisCacheNames;
+import za.co.qsnext.employeemanagement.email.EmailService;
+import za.co.qsnext.employeemanagement.email.EmailTemplate;
 
 import java.lang.reflect.Field;
 import java.time.Duration;
@@ -17,6 +19,8 @@ import java.util.Optional;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -30,12 +34,14 @@ class UserServiceTest {
     private CacheManager cacheManager;
     @Mock
     private Cache authorizationCache;
+    @Mock
+    private EmailService emailService;
 
     private UserService userService;
 
     @BeforeEach
     void setUp() {
-        userService = new UserService(userRepository, cacheManager);
+        userService = new UserService(userRepository, cacheManager, emailService);
     }
 
     private User userWithId(String username) {
@@ -83,6 +89,7 @@ class UserServiceTest {
         assertThat(user.getFailedLoginAttempts()).isEqualTo(1);
         assertThat(user.isLocked()).isFalse();
         verify(cacheManager, never()).getCache(RedisCacheNames.USER_PRINCIPALS);
+        verify(emailService, never()).queueEmail(any(), any(), any());
     }
 
     @Test
@@ -97,6 +104,7 @@ class UserServiceTest {
 
         assertThat(user.isLocked()).isTrue();
         verify(authorizationCache).evict("jane.doe");
+        verify(emailService).queueEmail(eq(EmailTemplate.ACCOUNT_LOCKED), eq(user.getEmail()), any());
     }
 
     @Test

@@ -19,8 +19,8 @@ import za.co.qsnext.employeemanagement.auth.dto.LoginRequest;
 import za.co.qsnext.employeemanagement.auth.dto.LoginResponse;
 import za.co.qsnext.employeemanagement.auth.dto.RefreshTokenRequest;
 import za.co.qsnext.employeemanagement.auth.dto.ResetPasswordRequest;
-import za.co.qsnext.employeemanagement.email.Email;
-import za.co.qsnext.employeemanagement.email.EmailRepository;
+import za.co.qsnext.employeemanagement.email.EmailService;
+import za.co.qsnext.employeemanagement.email.EmailTemplate;
 import za.co.qsnext.employeemanagement.exception.AccountLockedException;
 import za.co.qsnext.employeemanagement.exception.UnauthorizedException;
 import za.co.qsnext.employeemanagement.security.CustomUserDetails;
@@ -78,7 +78,7 @@ class AuthServiceTest {
     @Mock
     private PasswordResetTokenRepository passwordResetTokenRepository;
     @Mock
-    private EmailRepository emailRepository;
+    private EmailService emailService;
     @Mock
     private AuditService auditService;
     @Mock
@@ -101,7 +101,7 @@ class AuthServiceTest {
                 refreshTokenService,
                 refreshTokenRepository,
                 passwordResetTokenRepository,
-                emailRepository,
+                emailService,
                 auditService,
                 tokenRevocationService,
                 MAX_FAILED_LOGIN_ATTEMPTS,
@@ -313,7 +313,7 @@ class AuthServiceTest {
         authService.forgotPassword(new ForgotPasswordRequest(user.getEmail()));
 
         verify(passwordResetTokenRepository).save(any(PasswordResetToken.class));
-        verify(emailRepository).save(any(Email.class));
+        verify(emailService).queueEmail(eq(EmailTemplate.PASSWORD_RESET), eq(user.getEmail()), any());
         verify(auditService).log(
                 user.getId(), "PASSWORD_RESET_REQUESTED", "USER", user.getId(), AuditService.RESULT_SUCCESS);
     }
@@ -325,7 +325,7 @@ class AuthServiceTest {
         authService.forgotPassword(new ForgotPasswordRequest("nobody@qsnext.co.za"));
 
         verify(passwordResetTokenRepository, never()).save(any());
-        verify(emailRepository, never()).save(any());
+        verify(emailService, never()).queueEmail(any(), any(), any());
     }
 
     @Test

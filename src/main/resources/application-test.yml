@@ -24,3 +24,20 @@ security:
     secret: test-only-jwt-signing-secret-do-not-use-in-production-0123456789
     access-token-expiration: 900000
     refresh-token-expiration: 604800000
+
+# Fast retry/backoff and a short outbox-stuck threshold so tests that
+# exercise the retry -> DLQ path and the outbox sweep don't have to wait
+# out production-sized delays.
+email:
+  from-address: no-reply@qsnext.co.za
+
+  consumer:
+    max-attempts: 3
+    initial-interval-ms: 20
+    backoff-multiplier: 2.0
+    max-interval-ms: 100
+
+  outbox:
+    sweep-interval-ms: 1000
+    stuck-threshold-seconds: 1
+    sweep-batch-size: 50

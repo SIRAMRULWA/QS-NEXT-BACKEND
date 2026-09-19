@@ -22,8 +22,8 @@ import za.co.qsnext.employeemanagement.auth.dto.LoginResponse;
 import za.co.qsnext.employeemanagement.auth.dto.RefreshTokenRequest;
 import za.co.qsnext.employeemanagement.auth.dto.RegisterRequest;
 import za.co.qsnext.employeemanagement.auth.dto.ResetPasswordRequest;
-import za.co.qsnext.employeemanagement.email.Email;
-import za.co.qsnext.employeemanagement.email.EmailRepository;
+import za.co.qsnext.employeemanagement.email.EmailService;
+import za.co.qsnext.employeemanagement.email.EmailTemplate;
 import za.co.qsnext.employeemanagement.exception.AccountLockedException;
 import za.co.qsnext.employeemanagement.exception.DuplicateResourceException;
 import za.co.qsnext.employeemanagement.exception.UnauthorizedException;
@@ -43,6 +43,7 @@ import java.security.SecureRandom;
 import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.util.Base64;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -63,7 +64,7 @@ public class AuthService {
     private final RefreshTokenService refreshTokenService;
     private final RefreshTokenRepository refreshTokenRepository;
     private final PasswordResetTokenRepository passwordResetTokenRepository;
-    private final EmailRepository emailRepository;
+    private final EmailService emailService;
     private final AuditService auditService;
     private final TokenRevocationService tokenRevocationService;
 
@@ -81,7 +82,7 @@ public class AuthService {
             RefreshTokenService refreshTokenService,
             RefreshTokenRepository refreshTokenRepository,
             PasswordResetTokenRepository passwordResetTokenRepository,
-            EmailRepository emailRepository,
+            EmailService emailService,
             AuditService auditService,
             TokenRevocationService tokenRevocationService,
             @Value("${security.auth.max-failed-login-attempts}") int maxFailedLoginAttempts,
@@ -97,7 +98,7 @@ public class AuthService {
         this.refreshTokenService = refreshTokenService;
         this.refreshTokenRepository = refreshTokenRepository;
         this.passwordResetTokenRepository = passwordResetTokenRepository;
-        this.emailRepository = emailRepository;
+        this.emailService = emailService;
         this.auditService = auditService;
         this.tokenRevocationService = tokenRevocationService;
         this.maxFailedLoginAttempts = maxFailedLoginAttempts;
@@ -240,6 +241,12 @@ public class AuthService {
 
         User savedUser =
                 userRepository.save(user);
+
+        emailService.queueEmail(
+                EmailTemplate.WELCOME,
+                savedUser.getEmail(),
+                Map.of("username", savedUser.getUsername())
+        );
 
         auditService.log(
                 savedUser.getId(),
@@ -444,16 +451,12 @@ public class AuthService {
                 )
         );
 
-        emailRepository.save(
-                new Email(
-                        user.getEmail(),
-                        "Reset your QSNext password",
-                        "A password reset was requested for your account. "
-                                + "Use this token to reset your password: " + rawToken
-                                + ". This token expires in "
-                                + passwordResetTokenExpiration.toMinutes() + " minutes. "
-                                + "If you did not request this, you can ignore this email.",
-                        "PASSWORD_RESET"
+        emailService.queueEmail(
+                EmailTemplate.PASSWORD_RESET,
+                user.getEmail(),
+                Map.of(
+                        "token", rawToken,
+                        "expiresInMinutes", String.valueOf(passwordResetTokenExpiration.toMinutes())
                 )
         );
 

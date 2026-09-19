@@ -1,17 +1,43 @@
 package za.co.qsnext.employeemanagement.rabbitmq;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import org.springframework.amqp.core.Binding;
 import org.springframework.amqp.core.BindingBuilder;
 import org.springframework.amqp.core.DirectExchange;
 import org.springframework.amqp.core.Queue;
 import org.springframework.amqp.core.QueueBuilder;
+import org.springframework.amqp.rabbit.config.RetryInterceptorBuilder;
+import org.springframework.amqp.rabbit.config.SimpleRabbitListenerContainerFactory;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.amqp.rabbit.retry.RejectAndDontRequeueRecoverer;
+import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
+import org.springframework.amqp.support.converter.MessageConverter;
+import org.aopalliance.aop.Advice;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
 public class RabbitMqConfig {
+
+    private final int consumerMaxAttempts;
+    private final long consumerInitialIntervalMs;
+    private final double consumerBackoffMultiplier;
+    private final long consumerMaxIntervalMs;
+
+    public RabbitMqConfig(
+            @Value("${email.consumer.max-attempts}") int consumerMaxAttempts,
+            @Value("${email.consumer.initial-interval-ms}") long consumerInitialIntervalMs,
+            @Value("${email.consumer.backoff-multiplier}") double consumerBackoffMultiplier,
+            @Value("${email.consumer.max-interval-ms}") long consumerMaxIntervalMs
+    ) {
+        this.consumerMaxAttempts = consumerMaxAttempts;
+        this.consumerInitialIntervalMs = consumerInitialIntervalMs;
+        this.consumerBackoffMultiplier = consumerBackoffMultiplier;
+        this.consumerMaxIntervalMs = consumerMaxIntervalMs;
+    }
 
     @Bean
     public DirectExchange emailExchange() {
@@ -84,12 +110,53 @@ public class RabbitMqConfig {
     }
 
     @Bean
+    public MessageConverter messageConverter() {
+        return new Jackson2JsonMessageConverter(new ObjectMapper().findAndRegisterModules());
+    }
+
+    @Bean
     public RabbitTemplate rabbitTemplate(
-            ConnectionFactory connectionFactory
+            ConnectionFactory connectionFactory,
+            MessageConverter messageConverter
     ) {
 
-        return new RabbitTemplate(
-                connectionFactory
-        );
+        RabbitTemplate rabbitTemplate = new RabbitTemplate(connectionFactory);
+        rabbitTemplate.setMessageConverter(messageConverter);
+        return rabbitTemplate;
+    }
+
+    /**
+     * Retries a failed delivery in-process with exponential backoff before
+     * giving up. {@link RejectAndDontRequeueRecoverer} rejects the message
+     * without requeueing once attempts are exhausted, which - given the
+     * queue's dead-letter-exchange configuration above - is exactly what
+     * routes it to the DLQ.
+     */
+    @Bean
+    public SimpleRabbitListenerContainerFactory rabbitListenerContainerFactory(
+            ConnectionFactory connectionFactory,
+            MessageConverter messageConverter
+    ) {
+
+        SimpleRabbitListenerContainerFactory factory = new SimpleRabbitListenerContainerFactory();
+        factory.setConnectionFactory(connectionFactory);
+        factory.setMessageConverter(messageConverter);
+
+        Advice retryAdvice = RetryInterceptorBuilder.stateless()
+                // maxRetries is retries *after* the first attempt, so
+                // subtract one to make consumerMaxAttempts mean the total
+                // number of tries (matching the property's name).
+                .maxRetries(Math.max(consumerMaxAttempts - 1, 0))
+                .backOffOptions(
+                        consumerInitialIntervalMs,
+                        consumerBackoffMultiplier,
+                        consumerMaxIntervalMs
+                )
+                .recoverer(new RejectAndDontRequeueRecoverer())
+                .build();
+
+        factory.setAdviceChain(retryAdvice);
+
+        return factory;
     }
 }

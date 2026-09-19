@@ -6,11 +6,15 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import za.co.qsnext.employeemanagement.config.RedisCacheNames;
+import za.co.qsnext.employeemanagement.email.EmailService;
+import za.co.qsnext.employeemanagement.email.EmailTemplate;
 import za.co.qsnext.employeemanagement.exception.DuplicateResourceException;
 import za.co.qsnext.employeemanagement.exception.UserNotFoundException;
 
 import java.time.Duration;
 import java.time.OffsetDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.Map;
 import java.util.UUID;
 
 @Service
@@ -19,13 +23,16 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final CacheManager cacheManager;
+    private final EmailService emailService;
 
     public UserService(
             UserRepository userRepository,
-            CacheManager cacheManager
+            CacheManager cacheManager,
+            EmailService emailService
     ) {
         this.userRepository = userRepository;
         this.cacheManager = cacheManager;
+        this.emailService = emailService;
     }
 
     public User getById(UUID userId) {
@@ -104,10 +111,16 @@ public class UserService {
         int attempts = user.incrementFailedLoginAttempts();
 
         if (attempts >= maxFailedLoginAttempts) {
-            user.lockUntil(
-                    OffsetDateTime.now().plus(accountLockDuration)
-            );
+
+            OffsetDateTime lockedUntil = OffsetDateTime.now().plus(accountLockDuration);
+            user.lockUntil(lockedUntil);
             evictAuthorizationCache(user.getUsername());
+
+            emailService.queueEmail(
+                    EmailTemplate.ACCOUNT_LOCKED,
+                    user.getEmail(),
+                    Map.of("lockedUntil", lockedUntil.format(DateTimeFormatter.ISO_OFFSET_DATE_TIME))
+            );
         }
     }
 
