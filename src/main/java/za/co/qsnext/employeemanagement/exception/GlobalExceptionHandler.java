@@ -132,6 +132,19 @@ public class GlobalExceptionHandler {
         );
     }
 
+    @ExceptionHandler(AccountLockedException.class)
+    public ResponseEntity<ErrorResponse> handleAccountLocked(
+            AccountLockedException exception,
+            HttpServletRequest request
+    ) {
+        return buildResponse(
+                HttpStatus.LOCKED,
+                "ACCOUNT_LOCKED",
+                exception.getMessage(),
+                request.getRequestURI()
+        );
+    }
+
     /**
      * Handles authorization failures from method-level security.
      *

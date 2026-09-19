@@ -1,10 +1,13 @@
 package za.co.qsnext.employeemanagement.user;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import za.co.qsnext.employeemanagement.exception.DuplicateResourceException;
 import za.co.qsnext.employeemanagement.exception.UserNotFoundException;
 
+import java.time.Duration;
+import java.time.OffsetDateTime;
 import java.util.UUID;
 
 @Service
@@ -72,5 +75,45 @@ public class UserService {
     public void enable(UUID userId) {
         User user = getById(userId);
         user.enable();
+    }
+
+    /**
+     * Records a failed login attempt and locks the account once the
+     * configured threshold is reached. Runs in its own transaction so the
+     * attempt is persisted even though the caller's login transaction is
+     * about to roll back after throwing an authentication failure.
+     */
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void registerFailedLoginAttempt(
+            UUID userId,
+            int maxFailedLoginAttempts,
+            Duration accountLockDuration
+    ) {
+        User user = getById(userId);
+
+        int attempts = user.incrementFailedLoginAttempts();
+
+        if (attempts >= maxFailedLoginAttempts) {
+            user.lockUntil(
+                    OffsetDateTime.now().plus(accountLockDuration)
+            );
+        }
+    }
+
+    /**
+     * Resets the failed-login counter and records the successful login
+     * time. Runs in its own transaction so it is not affected by whatever
+     * the caller does afterwards in the same login flow.
+     */
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void recordSuccessfulLogin(UUID userId) {
+        User user = getById(userId);
+        user.recordSuccessfulLogin();
+    }
+
+    @Transactional
+    public void changePassword(UUID userId, String newPasswordHash) {
+        User user = getById(userId);
+        user.changePassword(newPasswordHash);
     }
 }

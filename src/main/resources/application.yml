@@ -71,3 +71,8 @@ security:
     secret: ${JWT_SECRET}
     access-token-expiration: ${JWT_ACCESS_TOKEN_EXPIRATION:900000}
     refresh-token-expiration: ${JWT_REFRESH_TOKEN_EXPIRATION:604800000}
+
+  auth:
+    max-failed-login-attempts: ${AUTH_MAX_FAILED_LOGIN_ATTEMPTS:5}
+    account-lock-duration-minutes: ${AUTH_ACCOUNT_LOCK_DURATION_MINUTES:15}
+    password-reset-token-expiration-minutes: ${AUTH_PASSWORD_RESET_TOKEN_EXPIRATION_MINUTES:30}

@@ -10,6 +10,8 @@ import org.springframework.stereotype.Service;
 
 import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.Date;
 import java.util.UUID;
 
@@ -56,16 +58,38 @@ public class JwtService {
         );
     }
 
-    public String generateRefreshToken(
+    /**
+     * Issues a refresh token carrying a unique {@code jti} claim, so the
+     * caller can track/rotate/revoke it server-side (a bare signed JWT
+     * cannot otherwise be invalidated before it naturally expires).
+     */
+    public IssuedRefreshToken generateRefreshToken(
             UUID userId,
             String username
     ) {
 
-        return generateToken(
-                userId,
-                username,
-                REFRESH_TOKEN,
-                refreshTokenExpiration
+        UUID tokenId = UUID.randomUUID();
+
+        Date now = new Date();
+        Date expiration = new Date(now.getTime() + refreshTokenExpiration);
+
+        String token = Jwts.builder()
+                .subject(username)
+                .id(tokenId.toString())
+                .claim(USER_ID_CLAIM, userId.toString())
+                .claim(TOKEN_TYPE_CLAIM, REFRESH_TOKEN)
+                .issuedAt(now)
+                .expiration(expiration)
+                .signWith(secretKey)
+                .compact();
+
+        return new IssuedRefreshToken(
+                token,
+                tokenId,
+                OffsetDateTime.ofInstant(
+                        expiration.toInstant(),
+                        ZoneOffset.UTC
+                )
         );
     }
 
@@ -75,6 +99,21 @@ public class JwtService {
 
         return extractClaims(token)
                 .getSubject();
+    }
+
+    public UUID extractTokenId(
+            String token
+    ) {
+
+        String tokenId = extractClaims(token).getId();
+
+        if (tokenId == null) {
+            throw new IllegalArgumentException(
+                    "Token does not carry an id (jti) claim"
+            );
+        }
+
+        return UUID.fromString(tokenId);
     }
 
     public UUID extractUserId(
@@ -197,5 +236,12 @@ public class JwtService {
         return claims
                 .getExpiration()
                 .before(new Date());
+    }
+
+    public record IssuedRefreshToken(
+            String token,
+            UUID tokenId,
+            OffsetDateTime expiresAt
+    ) {
     }
 }
