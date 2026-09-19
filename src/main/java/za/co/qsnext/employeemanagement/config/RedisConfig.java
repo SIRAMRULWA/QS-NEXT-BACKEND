@@ -58,6 +58,16 @@ public class RedisConfig {
         PolymorphicTypeValidator typeValidator = BasicPolymorphicTypeValidator
                 .builder()
                 .allowIfSubType("za.co.qsnext.employeemanagement.")
+                /*
+                 * Cached values also carry standard JDK collection types
+                 * as fields (e.g. CustomUserDetails.authorityNames is a
+                 * Set<String>, concretely a java.util.ImmutableCollections
+                 * subtype at runtime under default typing) - these are
+                 * ordinary JDK classes, not third-party deserialization
+                 * gadgets, so trusting the whole java.util package is a
+                 * safe, standard allowance here.
+                 */
+                .allowIfSubType("java.util.")
                 .build();
 
         GenericJacksonJsonRedisSerializer serializer =

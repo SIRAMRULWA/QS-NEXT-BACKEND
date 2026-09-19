@@ -1,8 +1,9 @@
 package za.co.qsnext.employeemanagement.department;
 
+import org.springframework.cache.Cache;
+import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
-import org.springframework.cache.annotation.Caching;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import za.co.qsnext.employeemanagement.exception.DepartmentNotFoundException;
@@ -14,12 +15,17 @@ import java.util.UUID;
 @Transactional(readOnly = true)
 public class DepartmentService {
 
+    private static final String BY_NAME_CACHE = "departmentsByName";
+
     private final DepartmentRepository departmentRepository;
+    private final CacheManager cacheManager;
 
     public DepartmentService(
-            DepartmentRepository departmentRepository
+            DepartmentRepository departmentRepository,
+            CacheManager cacheManager
     ) {
         this.departmentRepository = departmentRepository;
+        this.cacheManager = cacheManager;
     }
 
     @Cacheable(value = "departments", key = "#departmentId")
@@ -32,7 +38,7 @@ public class DepartmentService {
                 );
     }
 
-    @Cacheable(value = "departmentsByName", key = "#name")
+    @Cacheable(value = BY_NAME_CACHE, key = "#name")
     public Department getByName(String name) {
         return departmentRepository.findByName(name)
                 .orElseThrow(() ->
@@ -63,27 +69,23 @@ public class DepartmentService {
 
     /*
      * The by-name cache is keyed on a mutable field (a department's name
-     * can change), so a rename can't be evicted by a single key the way
-     * the by-id cache can. Renames/deletes are low-frequency admin
-     * operations, so a full clear of that cache is a deliberate,
-     * correctness-first trade-off rather than tracking old/new names.
-     * Both evictions are declared directly on these public methods
-     * (rather than delegated to a private helper) because Spring's
-     * proxy-based caching aspect does not apply to self-invoked calls.
+     * can change), so it can't be evicted by the same @CacheEvict(key=...)
+     * the by-id cache uses. It's evicted programmatically, by both the
+     * old and new name, via CacheManager directly - this also sidesteps
+     * Spring's proxy-based caching aspect not applying to self-invoked
+     * calls, which a private @CacheEvict-annotated helper would hit.
      */
     @Transactional
-    @Caching(evict = {
-            @CacheEvict(value = "departments", key = "#departmentId"),
-            @CacheEvict(value = "departmentsByName", allEntries = true)
-    })
+    @CacheEvict(value = "departments", key = "#departmentId")
     public Department update(
             UUID departmentId,
             String name,
             String description
     ) {
         Department department = getById(departmentId);
+        String previousName = department.getName();
 
-        if (!department.getName().equalsIgnoreCase(name)
+        if (!previousName.equalsIgnoreCase(name)
                 && departmentRepository.existsByName(name)) {
 
             throw new DuplicateResourceException(
@@ -93,17 +95,28 @@ public class DepartmentService {
 
         department.update(name, description);
 
+        evictByName(previousName);
+        evictByName(name);
+
         return department;
     }
 
     @Transactional
-    @Caching(evict = {
-            @CacheEvict(value = "departments", key = "#departmentId"),
-            @CacheEvict(value = "departmentsByName", allEntries = true)
-    })
+    @CacheEvict(value = "departments", key = "#departmentId")
     public void delete(UUID departmentId) {
         Department department = getById(departmentId);
 
         departmentRepository.delete(department);
+
+        evictByName(department.getName());
+    }
+
+    private void evictByName(String name) {
+
+        Cache cache = cacheManager.getCache(BY_NAME_CACHE);
+
+        if (cache != null) {
+            cache.evict(name);
+        }
     }
 }
