@@ -3,6 +3,8 @@ package za.co.qsnext.employeemanagement.exception;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
 
+import za.co.qsnext.employeemanagement.ai.AiProviderException;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
@@ -180,6 +182,32 @@ public class GlobalExceptionHandler {
                 HttpStatus.NOT_FOUND,
                 "RECRUITMENT_NOT_FOUND",
                 exception.getMessage(),
+                request.getRequestURI()
+        );
+    }
+
+    @ExceptionHandler(AiNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleAiNotFound(
+            AiNotFoundException exception,
+            HttpServletRequest request
+    ) {
+        return buildResponse(
+                HttpStatus.NOT_FOUND,
+                "AI_SUGGESTION_NOT_FOUND",
+                exception.getMessage(),
+                request.getRequestURI()
+        );
+    }
+
+    @ExceptionHandler(AiProviderException.class)
+    public ResponseEntity<ErrorResponse> handleAiProviderFailure(
+            AiProviderException exception,
+            HttpServletRequest request
+    ) {
+        return buildResponse(
+                HttpStatus.SERVICE_UNAVAILABLE,
+                "AI_PROVIDER_UNAVAILABLE",
+                "The AI provider is temporarily unavailable. Please try again later.",
                 request.getRequestURI()
         );
     }
