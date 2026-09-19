@@ -6,6 +6,7 @@ import za.co.qsnext.employeemanagement.auth.PasswordService;
 import za.co.qsnext.employeemanagement.exception.DuplicateResourceException;
 import za.co.qsnext.employeemanagement.exception.UnauthorizedException;
 import za.co.qsnext.employeemanagement.exception.UserNotFoundException;
+import za.co.qsnext.employeemanagement.security.CustomUserDetailsService;
 import za.co.qsnext.employeemanagement.security.RefreshTokenService;
 
 import java.util.UUID;
@@ -17,15 +18,18 @@ public class UserService {
     private final UserRepository userRepository;
     private final PasswordService passwordService;
     private final RefreshTokenService refreshTokenService;
+    private final CustomUserDetailsService customUserDetailsService;
 
     public UserService(
             UserRepository userRepository,
             PasswordService passwordService,
-            RefreshTokenService refreshTokenService
+            RefreshTokenService refreshTokenService,
+            CustomUserDetailsService customUserDetailsService
     ) {
         this.userRepository = userRepository;
         this.passwordService = passwordService;
         this.refreshTokenService = refreshTokenService;
+        this.customUserDetailsService = customUserDetailsService;
     }
 
     public User getById(UUID userId) {
@@ -77,18 +81,22 @@ public class UserService {
     public void disable(UUID userId) {
         User user = getById(userId);
         user.disable();
+        customUserDetailsService.evictUser(user.getUsername());
     }
 
     @Transactional
     public void enable(UUID userId) {
         User user = getById(userId);
         user.enable();
+        customUserDetailsService.evictUser(user.getUsername());
     }
 
     /**
      * Self-service password change. Revokes every refresh token issued
      * to the user so sessions established under the old password stop
-     * working once it is no longer trustable.
+     * working once it is no longer trustable, and evicts the cached
+     * authentication principal so a stale password hash can't still be
+     * accepted for the cache's TTL.
      */
     @Transactional
     public void changePassword(
@@ -112,5 +120,6 @@ public class UserService {
         );
 
         refreshTokenService.revokeAll(userId);
+        customUserDetailsService.evictUser(user.getUsername());
     }
 }

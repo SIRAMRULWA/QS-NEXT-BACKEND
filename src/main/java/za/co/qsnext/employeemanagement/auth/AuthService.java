@@ -76,15 +76,17 @@ public class AuthService {
                 );
             }
 
-            User user = userDetails.getUser();
-
-            if (!user.isEnabled()) {
+            if (!userDetails.isEnabled()) {
                 throw new UnauthorizedException(
                         "User account is disabled"
                 );
             }
 
-            return createLoginResponse(user);
+            return createLoginResponse(
+                    userDetails.getUserId(),
+                    userDetails.getUsername(),
+                    userDetails.getEmail()
+            );
 
         } catch (AuthenticationException ex) {
 
@@ -285,11 +287,23 @@ public class AuthService {
     private LoginResponse createLoginResponse(
             User user
     ) {
+        return createLoginResponse(
+                user.getId(),
+                user.getUsername(),
+                user.getEmail()
+        );
+    }
+
+    private LoginResponse createLoginResponse(
+            UUID userId,
+            String username,
+            String email
+    ) {
 
         String accessToken =
                 jwtService.generateAccessToken(
-                        user.getId(),
-                        user.getUsername()
+                        userId,
+                        username
                 );
 
         String tokenId =
@@ -297,13 +311,13 @@ public class AuthService {
 
         String refreshToken =
                 jwtService.generateRefreshToken(
-                        user.getId(),
-                        user.getUsername(),
+                        userId,
+                        username,
                         tokenId
                 );
 
         refreshTokenService.store(
-                user.getId(),
+                userId,
                 tokenId,
                 Duration.ofMillis(
                         jwtService.getRefreshTokenExpiration()
@@ -315,9 +329,9 @@ public class AuthService {
                 refreshToken,
                 TOKEN_TYPE,
                 jwtService.getAccessTokenExpiration(),
-                user.getId(),
-                user.getUsername(),
-                user.getEmail()
+                userId,
+                username,
+                email
         );
     }
 }
