@@ -1,6 +1,7 @@
 package za.co.qsnext.employeemanagement.security;
 
 import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.JwtBuilder;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.security.Keys;
@@ -22,6 +23,13 @@ public class JwtService {
     private static final String ACCESS_TOKEN = "access";
     private static final String REFRESH_TOKEN = "refresh";
 
+    /**
+     * HS256 requires a key of at least 256 bits. Enforced at startup so a
+     * weak secret fails fast with a clear message instead of surfacing as
+     * an obscure WeakKeyException on the first token signed at runtime.
+     */
+    private static final int MIN_SECRET_BYTES = 32;
+
     private final SecretKey secretKey;
     private final long accessTokenExpiration;
     private final long refreshTokenExpiration;
@@ -32,9 +40,20 @@ public class JwtService {
             @Value("${security.jwt.refresh-token-expiration}") long refreshTokenExpiration
     ) {
 
-        this.secretKey = Keys.hmacShaKeyFor(
-                secret.getBytes(StandardCharsets.UTF_8)
-        );
+        byte[] secretBytes = secret.getBytes(StandardCharsets.UTF_8);
+
+        if (secretBytes.length < MIN_SECRET_BYTES) {
+            throw new IllegalStateException(
+                    "security.jwt.secret must be at least "
+                            + MIN_SECRET_BYTES
+                            + " bytes (256 bits) for HS256 signing; "
+                            + "configured secret is only "
+                            + secretBytes.length
+                            + " bytes"
+            );
+        }
+
+        this.secretKey = Keys.hmacShaKeyFor(secretBytes);
 
         this.accessTokenExpiration =
                 accessTokenExpiration;
@@ -52,20 +71,29 @@ public class JwtService {
                 userId,
                 username,
                 ACCESS_TOKEN,
-                accessTokenExpiration
+                accessTokenExpiration,
+                null
         );
     }
 
+    /**
+     * @param tokenId unique identifier (jti) the caller tracks in Redis
+     *                so the refresh token can be revoked before its
+     *                natural expiry (logout, password change, reuse
+     *                detection on rotation).
+     */
     public String generateRefreshToken(
             UUID userId,
-            String username
+            String username,
+            String tokenId
     ) {
 
         return generateToken(
                 userId,
                 username,
                 REFRESH_TOKEN,
-                refreshTokenExpiration
+                refreshTokenExpiration,
+                tokenId
         );
     }
 
@@ -75,6 +103,18 @@ public class JwtService {
 
         return extractClaims(token)
                 .getSubject();
+    }
+
+    /**
+     * @return the token's {@code jti} claim, or {@code null} for tokens
+     *         that were not issued with one (access tokens).
+     */
+    public String extractTokenId(
+            String token
+    ) {
+
+        return extractClaims(token)
+                .getId();
     }
 
     public UUID extractUserId(
@@ -136,7 +176,8 @@ public class JwtService {
             UUID userId,
             String username,
             String tokenType,
-            long expirationMillis
+            long expirationMillis,
+            String tokenId
     ) {
 
         Date now = new Date();
@@ -147,7 +188,7 @@ public class JwtService {
                                 + expirationMillis
                 );
 
-        return Jwts.builder()
+        JwtBuilder builder = Jwts.builder()
                 .subject(username)
                 .claim(
                         USER_ID_CLAIM,
@@ -158,8 +199,14 @@ public class JwtService {
                         tokenType
                 )
                 .issuedAt(now)
-                .expiration(expiration)
-                .signWith(secretKey)
+                .expiration(expiration);
+
+        if (tokenId != null) {
+            builder.id(tokenId);
+        }
+
+        return builder
+                .signWith(secretKey, Jwts.SIG.HS256)
                 .compact();
     }
 

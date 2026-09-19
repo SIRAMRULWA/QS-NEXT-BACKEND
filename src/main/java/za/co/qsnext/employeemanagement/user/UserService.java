@@ -2,8 +2,11 @@ package za.co.qsnext.employeemanagement.user;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import za.co.qsnext.employeemanagement.auth.PasswordService;
 import za.co.qsnext.employeemanagement.exception.DuplicateResourceException;
+import za.co.qsnext.employeemanagement.exception.UnauthorizedException;
 import za.co.qsnext.employeemanagement.exception.UserNotFoundException;
+import za.co.qsnext.employeemanagement.security.RefreshTokenService;
 
 import java.util.UUID;
 
@@ -12,9 +15,17 @@ import java.util.UUID;
 public class UserService {
 
     private final UserRepository userRepository;
+    private final PasswordService passwordService;
+    private final RefreshTokenService refreshTokenService;
 
-    public UserService(UserRepository userRepository) {
+    public UserService(
+            UserRepository userRepository,
+            PasswordService passwordService,
+            RefreshTokenService refreshTokenService
+    ) {
         this.userRepository = userRepository;
+        this.passwordService = passwordService;
+        this.refreshTokenService = refreshTokenService;
     }
 
     public User getById(UUID userId) {
@@ -72,5 +83,34 @@ public class UserService {
     public void enable(UUID userId) {
         User user = getById(userId);
         user.enable();
+    }
+
+    /**
+     * Self-service password change. Revokes every refresh token issued
+     * to the user so sessions established under the old password stop
+     * working once it is no longer trustable.
+     */
+    @Transactional
+    public void changePassword(
+            UUID userId,
+            String currentPassword,
+            String newPassword
+    ) {
+        User user = getById(userId);
+
+        if (!passwordService.matches(
+                currentPassword,
+                user.getPasswordHash()
+        )) {
+            throw new UnauthorizedException(
+                    "Current password is incorrect"
+            );
+        }
+
+        user.changePassword(
+                passwordService.encode(newPassword)
+        );
+
+        refreshTokenService.revokeAll(userId);
     }
 }

@@ -4,6 +4,8 @@ import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
+import za.co.qsnext.employeemanagement.validation.StrongPassword;
+
 public record RegisterRequest(
 
         @NotBlank(message = "Username is required")
@@ -25,6 +27,7 @@ public record RegisterRequest(
                 max = 100,
                 message = "Password must be between 8 and 100 characters"
         )
+        @StrongPassword
         String password
 ) {
 }

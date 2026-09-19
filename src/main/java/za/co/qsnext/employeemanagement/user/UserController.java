@@ -1,8 +1,11 @@
 package za.co.qsnext.employeemanagement.user;
 
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import za.co.qsnext.employeemanagement.security.SecurityUtils;
+import za.co.qsnext.employeemanagement.user.dto.ChangePasswordRequest;
 import za.co.qsnext.employeemanagement.user.dto.UserResponse;
 
 import java.util.UUID;
@@ -61,6 +64,22 @@ public class UserController {
     ) {
 
         userService.enable(userId);
+
+        return ResponseEntity.noContent().build();
+    }
+
+    @PatchMapping("/me/password")
+    public ResponseEntity<Void> changeOwnPassword(
+            @Valid @RequestBody ChangePasswordRequest request
+    ) {
+
+        UUID currentUserId = SecurityUtils.getCurrentUserId();
+
+        userService.changePassword(
+                currentUserId,
+                request.currentPassword(),
+                request.newPassword()
+        );
 
         return ResponseEntity.noContent().build();
     }

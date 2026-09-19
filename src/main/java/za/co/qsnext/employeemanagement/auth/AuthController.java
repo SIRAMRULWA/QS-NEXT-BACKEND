@@ -49,4 +49,14 @@ public class AuthController {
                 authService.refreshToken(request)
         );
     }
+
+    @PostMapping("/logout")
+    public ResponseEntity<Void> logout(
+            @Valid @RequestBody RefreshTokenRequest request
+    ) {
+
+        authService.logout(request);
+
+        return ResponseEntity.noContent().build();
+    }
 }

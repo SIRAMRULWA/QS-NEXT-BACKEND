@@ -17,10 +17,14 @@ import za.co.qsnext.employeemanagement.exception.DuplicateResourceException;
 import za.co.qsnext.employeemanagement.exception.UnauthorizedException;
 import za.co.qsnext.employeemanagement.security.CustomUserDetails;
 import za.co.qsnext.employeemanagement.security.JwtService;
+import za.co.qsnext.employeemanagement.security.RefreshTokenService;
 import za.co.qsnext.employeemanagement.user.Role;
 import za.co.qsnext.employeemanagement.user.RoleRepository;
 import za.co.qsnext.employeemanagement.user.User;
 import za.co.qsnext.employeemanagement.user.UserRepository;
+
+import java.time.Duration;
+import java.util.UUID;
 
 @Service
 @Transactional(readOnly = true)
@@ -33,6 +37,7 @@ public class AuthService {
     private final RoleRepository roleRepository;
     private final PasswordService passwordService;
     private final JwtService jwtService;
+    private final RefreshTokenService refreshTokenService;
     private final AuthenticationManager authenticationManager;
 
     public AuthService(
@@ -40,12 +45,14 @@ public class AuthService {
             RoleRepository roleRepository,
             PasswordService passwordService,
             JwtService jwtService,
+            RefreshTokenService refreshTokenService,
             AuthenticationManager authenticationManager
     ) {
         this.userRepository = userRepository;
         this.roleRepository = roleRepository;
         this.passwordService = passwordService;
         this.jwtService = jwtService;
+        this.refreshTokenService = refreshTokenService;
         this.authenticationManager = authenticationManager;
     }
 
@@ -192,6 +199,35 @@ public class AuthService {
                 );
             }
 
+            String tokenId =
+                    jwtService.extractTokenId(refreshToken);
+
+            if (tokenId == null
+                    || !refreshTokenService.isActive(
+                    user.getId(),
+                    tokenId
+            )) {
+
+                /*
+                 * Token is well-formed and unexpired but has already
+                 * been used (rotation is single-use) or was revoked
+                 * via logout/password change.
+                 */
+                throw new UnauthorizedException(
+                        "Refresh token has been revoked or already used"
+                );
+            }
+
+            /*
+             * Rotate: the presented refresh token is single-use. Revoke
+             * it before issuing the replacement pair so a stolen token
+             * cannot be replayed after the legitimate client rotates it.
+             */
+            refreshTokenService.revoke(
+                    user.getId(),
+                    tokenId
+            );
+
             return createLoginResponse(user);
 
         } catch (JwtException
@@ -200,6 +236,49 @@ public class AuthService {
             throw new UnauthorizedException(
                     "Invalid or expired refresh token"
             );
+        }
+    }
+
+    /**
+     * Revokes the presented refresh token so it can no longer be used to
+     * mint new access tokens. Idempotent and deliberately silent about
+     * whether the token was valid, already expired, or already revoked,
+     * so it does not leak session state to a caller.
+     */
+    @Transactional
+    public void logout(
+            RefreshTokenRequest request
+    ) {
+
+        String refreshToken = request.refreshToken();
+
+        if (refreshToken == null || refreshToken.isBlank()) {
+            return;
+        }
+
+        try {
+
+            if (!jwtService.isRefreshToken(refreshToken)) {
+                return;
+            }
+
+            UUID userId =
+                    jwtService.extractUserId(refreshToken);
+
+            String tokenId =
+                    jwtService.extractTokenId(refreshToken);
+
+            if (tokenId != null) {
+                refreshTokenService.revoke(userId, tokenId);
+            }
+
+        } catch (JwtException | IllegalArgumentException ex) {
+
+            /*
+             * Malformed, expired or otherwise invalid token: nothing to
+             * revoke. Logout still succeeds from the caller's point of
+             * view.
+             */
         }
     }
 
@@ -213,11 +292,23 @@ public class AuthService {
                         user.getUsername()
                 );
 
+        String tokenId =
+                UUID.randomUUID().toString();
+
         String refreshToken =
                 jwtService.generateRefreshToken(
                         user.getId(),
-                        user.getUsername()
+                        user.getUsername(),
+                        tokenId
                 );
+
+        refreshTokenService.store(
+                user.getId(),
+                tokenId,
+                Duration.ofMillis(
+                        jwtService.getRefreshTokenExpiration()
+                )
+        );
 
         return new LoginResponse(
                 accessToken,
