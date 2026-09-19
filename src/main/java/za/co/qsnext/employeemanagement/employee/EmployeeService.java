@@ -5,6 +5,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import za.co.qsnext.employeemanagement.department.DepartmentService;
+import za.co.qsnext.employeemanagement.exception.BusinessRuleException;
 import za.co.qsnext.employeemanagement.exception.DuplicateResourceException;
 import za.co.qsnext.employeemanagement.exception.EmployeeNotFoundException;
 import za.co.qsnext.employeemanagement.user.UserService;
@@ -155,6 +156,56 @@ public class EmployeeService {
         Employee employee = getById(employeeId);
 
         employee.changeStatus(employmentStatus);
+
+        return employee;
+    }
+
+    @Transactional
+    public Employee assignManager(
+            UUID employeeId,
+            UUID managerId
+    ) {
+
+        Employee employee = getById(employeeId);
+
+        if (managerId != null) {
+
+            if (managerId.equals(employeeId)) {
+                throw new BusinessRuleException(
+                        "An employee cannot be their own manager"
+                );
+            }
+
+            // Verify the manager exists and reject a cycle
+            // (managerId reporting, directly or indirectly, to employeeId).
+            UUID currentId = managerId;
+            int depth = 0;
+
+            while (currentId != null) {
+
+                if (currentId.equals(employeeId)) {
+                    throw new BusinessRuleException(
+                            "Assigning this manager would create a reporting cycle"
+                    );
+                }
+
+                if (++depth > 50) {
+                    throw new BusinessRuleException(
+                            "Manager chain is too deep to validate"
+                    );
+                }
+
+                currentId = employeeRepository.findById(currentId)
+                        .orElseThrow(() ->
+                                new EmployeeNotFoundException(
+                                        "Employee not found: " + managerId
+                                )
+                        )
+                        .getManagerId();
+            }
+        }
+
+        employee.assignManager(managerId);
 
         return employee;
     }

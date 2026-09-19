@@ -4,6 +4,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import za.co.qsnext.employeemanagement.calendar.CalendarEvent;
+import za.co.qsnext.employeemanagement.calendar.CalendarService;
 import za.co.qsnext.employeemanagement.employee.Employee;
 import za.co.qsnext.employeemanagement.employee.EmployeeRepository;
 import za.co.qsnext.employeemanagement.employee.EmployeeService;
@@ -17,6 +19,9 @@ import za.co.qsnext.employeemanagement.user.UserService;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.UUID;
 
 @Service
@@ -29,6 +34,7 @@ public class LeaveService {
     private final UserService userService;
     private final EmployeeRepository employeeRepository;
     private final NotificationPublisher notificationPublisher;
+    private final CalendarService calendarService;
 
     public LeaveService(
             LeaveRequestRepository leaveRequestRepository,
@@ -36,7 +42,8 @@ public class LeaveService {
             EmployeeService employeeService,
             UserService userService,
             EmployeeRepository employeeRepository,
-            NotificationPublisher notificationPublisher
+            NotificationPublisher notificationPublisher,
+            CalendarService calendarService
     ) {
         this.leaveRequestRepository = leaveRequestRepository;
         this.leaveBalanceRepository = leaveBalanceRepository;
@@ -44,6 +51,7 @@ public class LeaveService {
         this.userService = userService;
         this.employeeRepository = employeeRepository;
         this.notificationPublisher = notificationPublisher;
+        this.calendarService = calendarService;
     }
 
     public LeaveRequest getById(UUID leaveRequestId) {
@@ -185,6 +193,8 @@ public class LeaveService {
                         + " has been approved."
         );
 
+        recordLeaveCalendarEvent(leaveRequest);
+
         return leaveRequest;
     }
 
@@ -223,6 +233,21 @@ public class LeaveService {
                 .ifPresent(employee -> notificationPublisher.publish(
                         employee.getUserId(), type, title, message
                 ));
+    }
+
+    private void recordLeaveCalendarEvent(LeaveRequest leaveRequest) {
+
+        employeeRepository.findById(leaveRequest.getEmployeeId()).ifPresent(employee ->
+                calendarService.recordSystemEvent(
+                        employee.getFirstName() + " " + employee.getLastName()
+                                + " - " + leaveRequest.getLeaveType() + " leave",
+                        CalendarEvent.TYPE_LEAVE,
+                        leaveRequest.getStartDate().atTime(LocalTime.MIN).atOffset(ZoneOffset.UTC),
+                        leaveRequest.getEndDate().atTime(LocalTime.MAX).atOffset(ZoneOffset.UTC),
+                        employee.getUserId(),
+                        employee.getDepartmentId()
+                )
+        );
     }
 
     @Transactional

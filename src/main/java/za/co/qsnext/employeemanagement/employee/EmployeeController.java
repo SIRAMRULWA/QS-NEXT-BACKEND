@@ -184,6 +184,24 @@ public class EmployeeController {
         );
     }
 
+    @PreAuthorize("hasAuthority('EMPLOYEE_UPDATE')")
+    @PatchMapping("/{employeeId}/manager")
+    public ResponseEntity<EmployeeResponse> assignManager(
+            @PathVariable UUID employeeId,
+            @RequestParam(required = false) UUID managerId
+    ) {
+
+        Employee employee =
+                employeeService.assignManager(
+                        employeeId,
+                        managerId
+                );
+
+        return ResponseEntity.ok(
+                EmployeeResponse.from(employee)
+        );
+    }
+
     private Pageable createPageable(int page, int size) {
 
         if (page < 0) {

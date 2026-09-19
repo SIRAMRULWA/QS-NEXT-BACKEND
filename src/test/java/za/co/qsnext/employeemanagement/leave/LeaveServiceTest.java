@@ -6,6 +6,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import za.co.qsnext.employeemanagement.calendar.CalendarEvent;
+import za.co.qsnext.employeemanagement.calendar.CalendarService;
 import za.co.qsnext.employeemanagement.employee.Employee;
 import za.co.qsnext.employeemanagement.employee.EmployeeRepository;
 import za.co.qsnext.employeemanagement.employee.EmployeeService;
@@ -43,6 +45,8 @@ class LeaveServiceTest {
     private EmployeeRepository employeeRepository;
     @Mock
     private NotificationPublisher notificationPublisher;
+    @Mock
+    private CalendarService calendarService;
 
     private LeaveService leaveService;
 
@@ -50,7 +54,7 @@ class LeaveServiceTest {
     void setUp() {
         leaveService = new LeaveService(
                 leaveRequestRepository, leaveBalanceRepository, employeeService,
-                userService, employeeRepository, notificationPublisher);
+                userService, employeeRepository, notificationPublisher, calendarService);
     }
 
     private LeaveRequest pendingLeaveRequest(UUID employeeId) {
@@ -88,6 +92,8 @@ class LeaveServiceTest {
         assertThat(approved.getStatus()).isEqualTo("APPROVED");
         verify(notificationPublisher).publish(
                 eq(userId), eq(NotificationType.LEAVE_REQUEST_APPROVED), any(), any());
+        verify(calendarService).recordSystemEvent(
+                any(), eq(CalendarEvent.TYPE_LEAVE), any(), any(), eq(userId), any());
     }
 
     @Test

@@ -28,6 +28,45 @@ public class GlobalExceptionHandler {
         );
     }
 
+    @ExceptionHandler(CalendarEventNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleCalendarEventNotFound(
+            CalendarEventNotFoundException exception,
+            HttpServletRequest request
+    ) {
+        return buildResponse(
+                HttpStatus.NOT_FOUND,
+                "CALENDAR_EVENT_NOT_FOUND",
+                exception.getMessage(),
+                request.getRequestURI()
+        );
+    }
+
+    @ExceptionHandler(OnboardingNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleOnboardingNotFound(
+            OnboardingNotFoundException exception,
+            HttpServletRequest request
+    ) {
+        return buildResponse(
+                HttpStatus.NOT_FOUND,
+                "ONBOARDING_NOT_FOUND",
+                exception.getMessage(),
+                request.getRequestURI()
+        );
+    }
+
+    @ExceptionHandler(SchedulingNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleSchedulingNotFound(
+            SchedulingNotFoundException exception,
+            HttpServletRequest request
+    ) {
+        return buildResponse(
+                HttpStatus.NOT_FOUND,
+                "SCHEDULING_NOT_FOUND",
+                exception.getMessage(),
+                request.getRequestURI()
+        );
+    }
+
     @ExceptionHandler(UserNotFoundException.class)
     public ResponseEntity<ErrorResponse> handleUserNotFound(
             UserNotFoundException exception,
