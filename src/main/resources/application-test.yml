@@ -44,6 +44,19 @@ email:
     initial-interval-ms: 20
     backoff-multiplier: 2.0
     max-interval-ms: 100
+    # A single consumer thread (the implicit default everywhere else) is
+    # plenty for one real deployment's traffic, but this suite's ~40
+    # *IntegrationTest classes share one Spring context, one queue and
+    # that one thread - so every class's WELCOME/PASSWORD_RESET/
+    # notification email queues up behind whatever the rest of the suite
+    # is still sending. EmailConsumer is now safe to run concurrently
+    # (it tolerates a losing race on the same message via
+    # ObjectOptimisticLockingFailureException), so a handful of
+    # consumers here just gives the suite enough real throughput that a
+    # healthy email reaches SENT within a test's own wait window instead
+    # of merely waiting its turn.
+    concurrency: 5
+    max-concurrency: 5
 
   outbox:
     sweep-interval-ms: 1000

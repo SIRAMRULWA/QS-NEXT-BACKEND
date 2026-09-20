@@ -26,17 +26,23 @@ public class RabbitMqConfig {
     private final long consumerInitialIntervalMs;
     private final double consumerBackoffMultiplier;
     private final long consumerMaxIntervalMs;
+    private final int consumerConcurrency;
+    private final int consumerMaxConcurrency;
 
     public RabbitMqConfig(
             @Value("${email.consumer.max-attempts}") int consumerMaxAttempts,
             @Value("${email.consumer.initial-interval-ms}") long consumerInitialIntervalMs,
             @Value("${email.consumer.backoff-multiplier}") double consumerBackoffMultiplier,
-            @Value("${email.consumer.max-interval-ms}") long consumerMaxIntervalMs
+            @Value("${email.consumer.max-interval-ms}") long consumerMaxIntervalMs,
+            @Value("${email.consumer.concurrency:1}") int consumerConcurrency,
+            @Value("${email.consumer.max-concurrency:1}") int consumerMaxConcurrency
     ) {
         this.consumerMaxAttempts = consumerMaxAttempts;
         this.consumerInitialIntervalMs = consumerInitialIntervalMs;
         this.consumerBackoffMultiplier = consumerBackoffMultiplier;
         this.consumerMaxIntervalMs = consumerMaxIntervalMs;
+        this.consumerConcurrency = consumerConcurrency;
+        this.consumerMaxConcurrency = consumerMaxConcurrency;
     }
 
     @Bean
@@ -141,6 +147,8 @@ public class RabbitMqConfig {
         SimpleRabbitListenerContainerFactory factory = new SimpleRabbitListenerContainerFactory();
         factory.setConnectionFactory(connectionFactory);
         factory.setMessageConverter(messageConverter);
+        factory.setConcurrentConsumers(consumerConcurrency);
+        factory.setMaxConcurrentConsumers(consumerMaxConcurrency);
 
         Advice retryAdvice = RetryInterceptorBuilder.stateless()
                 // maxRetries is retries *after* the first attempt, so
