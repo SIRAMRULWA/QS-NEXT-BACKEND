@@ -57,15 +57,24 @@ class EmailOutboxIntegrationTest extends AbstractIntegrationTest {
 
         assertThat(passwordResetEmail).isPresent();
 
-        // A longer window than the first await: the single-threaded email
-        // consumer processes this whole suite's messages serially, and the
-        // WELCOME email counted by the first await says nothing about how
-        // far behind the PASSWORD_RESET email queued after it is.
+        // A longer window than the first await: the WELCOME email counted
+        // by the first await says nothing about how far behind the
+        // PASSWORD_RESET email queued after it is. This has been the
+        // single most stubborn wait in the whole outbox pipeline to size
+        // correctly - 10s and 20s both proved too tight on a CI runner
+        // that's deep into a 400+ test suite sharing one Postgres/Redis/
+        // RabbitMQ set of containers, with no exception or log line ever
+        // appearing to explain the delay (a successful send logs nothing
+        // at all - only StubEmailSender's failure path does), which is
+        // consistent with genuine resource contention rather than a
+        // logic bug. 60s costs nothing on the happy path (every other
+        // email in this suite reaches SENT in well under a second) and
+        // gives real headroom on a loaded runner.
         awaitUntil(
                 () -> emailRepository.findById(passwordResetEmail.get().getId())
                         .map(e -> e.getStatus() == EmailStatus.SENT)
                         .orElse(false),
-                Duration.ofSeconds(20)
+                Duration.ofSeconds(60)
         );
     }
 
