@@ -96,7 +96,7 @@ public class ComplianceController {
     public ResponseEntity<ComplianceRecordResponse> completeRecord(
             Authentication authentication,
             @PathVariable UUID recordId,
-            @RequestBody(required = false) CompleteComplianceRecordRequest request
+            @Valid @RequestBody(required = false) CompleteComplianceRecordRequest request
     ) {
         CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
         UUID evidenceDocumentId = request == null ? null : request.evidenceDocumentId();

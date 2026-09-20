@@ -12,11 +12,13 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import za.co.qsnext.employeemanagement.leave.dto.CreateLeaveBalanceRequest;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import za.co.qsnext.employeemanagement.leave.dto.CreateLeaveRequest;
-import za.co.qsnext.employeemanagement.leave.dto.LeaveApprovalRequest;
+import za.co.qsnext.employeemanagement.leave.dto.LeaveBalanceResponse;
 import za.co.qsnext.employeemanagement.leave.dto.LeaveResponse;
+import za.co.qsnext.employeemanagement.security.CustomUserDetails;
 
 import java.util.UUID;
 
@@ -31,7 +33,10 @@ public class LeaveController {
         this.leaveService = leaveService;
     }
 
-    @PreAuthorize("hasAuthority('LEAVE_READ')")
+    @PreAuthorize(
+            "hasAuthority('LEAVE_READ') and " +
+                    "@leaveAuthorizationService.canReadRequest(#leaveRequestId, authentication)"
+    )
     @Operation(summary = "Get by id")
     @GetMapping("/{leaveRequestId}")
     public ResponseEntity<LeaveResponse> getById(
@@ -45,7 +50,10 @@ public class LeaveController {
         );
     }
 
-    @PreAuthorize("hasAuthority('LEAVE_READ')")
+    @PreAuthorize(
+            "hasAuthority('LEAVE_READ') and " +
+                    "@employeeAuthorizationService.canRead(#employeeId, authentication)"
+    )
     @Operation(summary = "Get by employee")
     @GetMapping("/employee/{employeeId}")
     public ResponseEntity<Page<LeaveResponse>> getByEmployee(
@@ -63,7 +71,9 @@ public class LeaveController {
         );
     }
 
-    @PreAuthorize("hasAuthority('LEAVE_READ')")
+    @PreAuthorize(
+            "hasAuthority('LEAVE_READ') and @employeeAuthorizationService.canManage(authentication)"
+    )
     @Operation(summary = "Get by status")
     @GetMapping("/status/{status}")
     public ResponseEntity<Page<LeaveResponse>> getByStatus(
@@ -109,13 +119,15 @@ public class LeaveController {
     @PostMapping("/{leaveRequestId}/approve")
     public ResponseEntity<LeaveResponse> approve(
             @PathVariable UUID leaveRequestId,
-            @Valid @RequestBody LeaveApprovalRequest request
+            Authentication authentication
     ) {
+
+        CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
 
         LeaveRequest leaveRequest =
                 leaveService.approve(
                         leaveRequestId,
-                        request.approverId()
+                        userDetails.getUserId()
                 );
 
         return ResponseEntity.ok(
@@ -174,7 +186,7 @@ public class LeaveController {
     @PreAuthorize("hasAuthority('LEAVE_CREATE')")
     @Operation(summary = "Create balance")
     @PostMapping("/balances")
-    public ResponseEntity<LeaveBalance> createBalance(
+    public ResponseEntity<LeaveBalanceResponse> createBalance(
             @Valid @RequestBody CreateLeaveBalanceRequest request
     ) {
 
@@ -188,6 +200,6 @@ public class LeaveController {
 
         return ResponseEntity
                 .status(HttpStatus.CREATED)
-                .body(balance);
+                .body(LeaveBalanceResponse.from(balance));
     }
 }

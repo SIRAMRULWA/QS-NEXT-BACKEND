@@ -41,17 +41,20 @@ public class RateLimitFilter extends OncePerRequestFilter {
 
     private final StringRedisTemplate redisTemplate;
     private final ObjectMapper objectMapper;
+    private final ClientIpResolver clientIpResolver;
     private final int maxRequestsPerWindow;
     private final Duration window;
 
     public RateLimitFilter(
             StringRedisTemplate redisTemplate,
             ObjectMapper objectMapper,
+            ClientIpResolver clientIpResolver,
             @Value("${security.rate-limit.max-requests}") int maxRequestsPerWindow,
             @Value("${security.rate-limit.window-seconds}") long windowSeconds
     ) {
         this.redisTemplate = redisTemplate;
         this.objectMapper = objectMapper;
+        this.clientIpResolver = clientIpResolver;
         this.maxRequestsPerWindow = maxRequestsPerWindow;
         this.window = Duration.ofSeconds(windowSeconds);
     }
@@ -68,7 +71,7 @@ public class RateLimitFilter extends OncePerRequestFilter {
             FilterChain filterChain
     ) throws ServletException, IOException {
 
-        String key = KEY_PREFIX + request.getRequestURI() + ":" + resolveClientIp(request);
+        String key = KEY_PREFIX + request.getRequestURI() + ":" + clientIpResolver.resolve(request);
 
         Long requestCount = redisTemplate.opsForValue().increment(key);
 
@@ -93,16 +96,5 @@ public class RateLimitFilter extends OncePerRequestFilter {
         }
 
         filterChain.doFilter(request, response);
-    }
-
-    private String resolveClientIp(HttpServletRequest request) {
-
-        String forwardedFor = request.getHeader("X-Forwarded-For");
-
-        if (forwardedFor != null && !forwardedFor.isBlank()) {
-            return forwardedFor.split(",")[0].trim();
-        }
-
-        return request.getRemoteAddr();
     }
 }

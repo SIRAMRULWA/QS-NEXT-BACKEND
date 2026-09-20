@@ -1,5 +1,7 @@
 package za.co.qsnext.employeemanagement.recruitment;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -67,8 +69,8 @@ public class RecruitmentService {
         return JobRequisitionResponse.from(requisition);
     }
 
-    public List<JobRequisitionResponse> getAllRequisitions() {
-        return requisitionRepository.findAll().stream().map(JobRequisitionResponse::from).toList();
+    public Page<JobRequisitionResponse> getAllRequisitions(Pageable pageable) {
+        return requisitionRepository.findAll(pageable).map(JobRequisitionResponse::from);
     }
 
     @Transactional

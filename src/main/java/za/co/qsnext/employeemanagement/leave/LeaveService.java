@@ -4,6 +4,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import za.co.qsnext.employeemanagement.audit.AuditService;
 import za.co.qsnext.employeemanagement.calendar.CalendarEvent;
 import za.co.qsnext.employeemanagement.calendar.CalendarService;
 import za.co.qsnext.employeemanagement.employee.Employee;
@@ -37,6 +38,7 @@ public class LeaveService {
     private final EmployeeRepository employeeRepository;
     private final NotificationPublisher notificationPublisher;
     private final CalendarService calendarService;
+    private final AuditService auditService;
 
     public LeaveService(
             LeaveRequestRepository leaveRequestRepository,
@@ -45,7 +47,8 @@ public class LeaveService {
             UserService userService,
             EmployeeRepository employeeRepository,
             NotificationPublisher notificationPublisher,
-            CalendarService calendarService
+            CalendarService calendarService,
+            AuditService auditService
     ) {
         this.leaveRequestRepository = leaveRequestRepository;
         this.leaveBalanceRepository = leaveBalanceRepository;
@@ -54,6 +57,7 @@ public class LeaveService {
         this.employeeRepository = employeeRepository;
         this.notificationPublisher = notificationPublisher;
         this.calendarService = calendarService;
+        this.auditService = auditService;
     }
 
     public LeaveRequest getById(UUID leaveRequestId) {
@@ -197,6 +201,8 @@ public class LeaveService {
 
         recordLeaveCalendarEvent(leaveRequest);
 
+        auditService.log("LEAVE_REQUEST_APPROVED", "LeaveRequest", leaveRequestId, AuditService.RESULT_SUCCESS);
+
         return leaveRequest;
     }
 
@@ -221,6 +227,8 @@ public class LeaveService {
                         + leaveRequest.getStartDate() + " to " + leaveRequest.getEndDate()
                         + " has been rejected."
         );
+
+        auditService.log("LEAVE_REQUEST_REJECTED", "LeaveRequest", leaveRequestId, AuditService.RESULT_SUCCESS);
 
         return leaveRequest;
     }

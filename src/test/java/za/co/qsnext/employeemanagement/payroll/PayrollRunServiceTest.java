@@ -326,7 +326,8 @@ class PayrollRunServiceTest {
 
         when(payrollRunRepository.findById(runId)).thenReturn(Optional.of(run));
         when(payrollRunEntryRepository.findByPayrollRunId(runId)).thenReturn(List.of(entry));
-        when(employeeRepository.findById(employeeId)).thenReturn(Optional.of(employeeWithId(employeeId, userId)));
+        when(employeeRepository.findAllById(List.of(employeeId)))
+                .thenReturn(List.of(employeeWithId(employeeId, userId)));
 
         PayrollRunResponse response = payrollRunService.markRunPaid(runId);
 

@@ -5,6 +5,8 @@ import org.slf4j.LoggerFactory;
 
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
 import za.co.qsnext.employeemanagement.audit.AuditService;
 import za.co.qsnext.employeemanagement.rabbitmq.RabbitMqConstants;
@@ -31,6 +33,19 @@ public class EmailDeadLetterConsumer {
         this.auditService = auditService;
     }
 
+    /**
+     * REQUIRES_NEW for the same reason as {@link EmailConsumer#handle}: this
+     * runs on a pooled RabbitMQ listener container thread that is reused
+     * across deliveries, and this listener only ever fires right after an
+     * exhausted-retries/DLQ-routing event - exactly the abnormal,
+     * exception-heavy control flow most likely to leave stale transaction
+     * synchronization state behind on the thread. Without this, the save()
+     * below (and auditService.log()'s own write) could silently join that
+     * stale state instead of opening a real transaction, so the DLQ row's
+     * FAILED status and the EMAIL_DEAD_LETTERED audit entry would never
+     * actually commit - with no exception thrown anywhere to reveal it.
+     */
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     @RabbitListener(queues = RabbitMqConstants.EMAIL_DEAD_LETTER_QUEUE)
     public void handle(EmailMessage message) {
 

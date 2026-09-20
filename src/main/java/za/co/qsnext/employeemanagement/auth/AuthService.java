@@ -27,6 +27,7 @@ import za.co.qsnext.employeemanagement.email.EmailTemplate;
 import za.co.qsnext.employeemanagement.exception.AccountLockedException;
 import za.co.qsnext.employeemanagement.exception.DuplicateResourceException;
 import za.co.qsnext.employeemanagement.exception.UnauthorizedException;
+import za.co.qsnext.employeemanagement.security.ClientIpResolver;
 import za.co.qsnext.employeemanagement.security.CustomUserDetails;
 import za.co.qsnext.employeemanagement.security.JwtService;
 import za.co.qsnext.employeemanagement.security.TokenRevocationService;
@@ -67,6 +68,7 @@ public class AuthService {
     private final EmailService emailService;
     private final AuditService auditService;
     private final TokenRevocationService tokenRevocationService;
+    private final ClientIpResolver clientIpResolver;
 
     private final int maxFailedLoginAttempts;
     private final Duration accountLockDuration;
@@ -85,6 +87,7 @@ public class AuthService {
             EmailService emailService,
             AuditService auditService,
             TokenRevocationService tokenRevocationService,
+            ClientIpResolver clientIpResolver,
             @Value("${security.auth.max-failed-login-attempts}") int maxFailedLoginAttempts,
             @Value("${security.auth.account-lock-duration-minutes}") long accountLockDurationMinutes,
             @Value("${security.auth.password-reset-token-expiration-minutes}") long passwordResetTokenExpirationMinutes
@@ -101,6 +104,7 @@ public class AuthService {
         this.emailService = emailService;
         this.auditService = auditService;
         this.tokenRevocationService = tokenRevocationService;
+        this.clientIpResolver = clientIpResolver;
         this.maxFailedLoginAttempts = maxFailedLoginAttempts;
         this.accountLockDuration = Duration.ofMinutes(accountLockDurationMinutes);
         this.passwordResetTokenExpiration = Duration.ofMinutes(passwordResetTokenExpirationMinutes);
@@ -137,7 +141,7 @@ public class AuthService {
                     AuditService.RESULT_SUCCESS
             );
 
-            return createLoginResponse(user, resolveClientIp(httpRequest));
+            return createLoginResponse(user, clientIpResolver.resolve(httpRequest));
 
         } catch (LockedException ex) {
 
@@ -256,7 +260,7 @@ public class AuthService {
                 AuditService.RESULT_SUCCESS
         );
 
-        return createLoginResponse(savedUser, resolveClientIp(httpRequest));
+        return createLoginResponse(savedUser, clientIpResolver.resolve(httpRequest));
     }
 
     @Transactional
@@ -343,7 +347,7 @@ public class AuthService {
                 AuditService.RESULT_SUCCESS
         );
 
-        return createLoginResponse(user, resolveClientIp(httpRequest));
+        return createLoginResponse(user, clientIpResolver.resolve(httpRequest));
     }
 
     @Transactional
@@ -529,21 +533,6 @@ public class AuthService {
 
     private Optional<User> findUserForAudit(String username) {
         return userRepository.findByUsername(username);
-    }
-
-    private String resolveClientIp(HttpServletRequest httpRequest) {
-
-        if (httpRequest == null) {
-            return null;
-        }
-
-        String forwardedFor = httpRequest.getHeader("X-Forwarded-For");
-
-        if (forwardedFor != null && !forwardedFor.isBlank()) {
-            return forwardedFor.split(",")[0].trim();
-        }
-
-        return httpRequest.getRemoteAddr();
     }
 
     private String generateSecureToken() {

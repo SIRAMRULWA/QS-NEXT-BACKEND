@@ -5,6 +5,10 @@ import io.swagger.v3.oas.annotations.Operation;
 
 import jakarta.validation.Valid;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -47,8 +51,11 @@ public class RecruitmentController {
 
     @Operation(summary = "Get all requisitions")
     @GetMapping("/requisitions")
-    public ResponseEntity<List<JobRequisitionResponse>> getAllRequisitions() {
-        return ResponseEntity.ok(recruitmentService.getAllRequisitions());
+    public ResponseEntity<Page<JobRequisitionResponse>> getAllRequisitions(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size
+    ) {
+        return ResponseEntity.ok(recruitmentService.getAllRequisitions(createPageable(page, size)));
     }
 
     @Operation(summary = "Close requisition")
@@ -150,5 +157,13 @@ public class RecruitmentController {
     @PatchMapping("/applications/{applicationId}/withdraw")
     public ResponseEntity<ApplicationResponse> withdrawApplication(@PathVariable UUID applicationId) {
         return ResponseEntity.ok(recruitmentService.withdrawApplication(applicationId));
+    }
+
+    private Pageable createPageable(int page, int size) {
+
+        int safePage = Math.max(page, 0);
+        int safeSize = Math.min(Math.max(size, 1), 100);
+
+        return PageRequest.of(safePage, safeSize, Sort.by(Sort.Direction.DESC, "createdAt"));
     }
 }

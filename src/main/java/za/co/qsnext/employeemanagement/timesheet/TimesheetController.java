@@ -7,7 +7,9 @@ import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import za.co.qsnext.employeemanagement.security.CustomUserDetails;
 import za.co.qsnext.employeemanagement.timesheet.dto.*;
 
 import java.util.UUID;
@@ -25,7 +27,10 @@ public class TimesheetController {
         this.timesheetService = timesheetService;
     }
 
-    @PreAuthorize("hasAuthority('TIMESHEET_READ')")
+    @PreAuthorize(
+            "hasAuthority('TIMESHEET_READ') and " +
+                    "@timesheetAuthorizationService.canReadTimesheet(#timesheetId, authentication)"
+    )
     @Operation(summary = "Get by id")
     @GetMapping("/{timesheetId}")
     public ResponseEntity<TimesheetResponse> getById(
@@ -99,14 +104,16 @@ public class TimesheetController {
     @PostMapping("/{timesheetId}/approve")
     public ResponseEntity<TimesheetResponse> approve(
             @PathVariable UUID timesheetId,
-            @Valid @RequestBody TimesheetApprovalRequest request
+            Authentication authentication
     ) {
+
+        CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
 
         return ResponseEntity.ok(
                 TimesheetResponse.from(
                         timesheetService.approve(
                                 timesheetId,
-                                request.approverId()
+                                userDetails.getUserId()
                         )
                 )
         );

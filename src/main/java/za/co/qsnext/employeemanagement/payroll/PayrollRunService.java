@@ -26,7 +26,10 @@ import za.co.qsnext.employeemanagement.timesheet.TimesheetRepository;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 /**
  * Runs payroll for a {@link PayPeriod}: generates one {@link PayrollRunEntry}
@@ -261,16 +264,25 @@ public class PayrollRunService {
 
         run.markPaid();
 
-        for (PayrollRunEntry entry : payrollRunEntryRepository.findByPayrollRunId(runId)) {
+        List<PayrollRunEntry> entries = payrollRunEntryRepository.findByPayrollRunId(runId);
 
-            employeeRepository.findById(entry.getEmployeeId()).ifPresent(employee ->
-                    notificationPublisher.publish(
-                            employee.getUserId(),
-                            NotificationType.PAYSLIP_AVAILABLE,
-                            "Payslip available",
-                            "Your payslip is ready - net pay: " + entry.getNetPay() + "."
-                    )
-            );
+        Map<UUID, Employee> employeesById = employeeRepository
+                .findAllById(entries.stream().map(PayrollRunEntry::getEmployeeId).distinct().toList())
+                .stream()
+                .collect(Collectors.toMap(Employee::getId, Function.identity()));
+
+        for (PayrollRunEntry entry : entries) {
+
+            Employee employee = employeesById.get(entry.getEmployeeId());
+
+            if (employee != null) {
+                notificationPublisher.publish(
+                        employee.getUserId(),
+                        NotificationType.PAYSLIP_AVAILABLE,
+                        "Payslip available",
+                        "Your payslip is ready - net pay: " + entry.getNetPay() + "."
+                );
+            }
         }
 
         auditService.log("PAYROLL_RUN_PAID", "PayrollRun", runId, AuditService.RESULT_SUCCESS);

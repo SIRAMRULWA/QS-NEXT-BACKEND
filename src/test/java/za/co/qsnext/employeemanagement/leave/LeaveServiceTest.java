@@ -6,6 +6,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import za.co.qsnext.employeemanagement.audit.AuditService;
 import za.co.qsnext.employeemanagement.calendar.CalendarEvent;
 import za.co.qsnext.employeemanagement.calendar.CalendarService;
 import za.co.qsnext.employeemanagement.employee.Employee;
@@ -47,6 +48,8 @@ class LeaveServiceTest {
     private NotificationPublisher notificationPublisher;
     @Mock
     private CalendarService calendarService;
+    @Mock
+    private AuditService auditService;
 
     private LeaveService leaveService;
 
@@ -54,7 +57,8 @@ class LeaveServiceTest {
     void setUp() {
         leaveService = new LeaveService(
                 leaveRequestRepository, leaveBalanceRepository, employeeService,
-                userService, employeeRepository, notificationPublisher, calendarService);
+                userService, employeeRepository, notificationPublisher, calendarService,
+                auditService);
     }
 
     private LeaveRequest pendingLeaveRequest(UUID employeeId) {

@@ -14,6 +14,7 @@ import org.springframework.web.context.request.ServletRequestAttributes;
 import za.co.qsnext.employeemanagement.audit.dto.AuditLogResponse;
 import za.co.qsnext.employeemanagement.observability.BusinessMetrics;
 import za.co.qsnext.employeemanagement.observability.CorrelationIdFilter;
+import za.co.qsnext.employeemanagement.security.ClientIpResolver;
 import za.co.qsnext.employeemanagement.security.SecurityUtils;
 
 import java.util.UUID;
@@ -32,10 +33,16 @@ public class AuditService {
 
     private final AuditLogRepository auditLogRepository;
     private final BusinessMetrics businessMetrics;
+    private final ClientIpResolver clientIpResolver;
 
-    public AuditService(AuditLogRepository auditLogRepository, BusinessMetrics businessMetrics) {
+    public AuditService(
+            AuditLogRepository auditLogRepository,
+            BusinessMetrics businessMetrics,
+            ClientIpResolver clientIpResolver
+    ) {
         this.auditLogRepository = auditLogRepository;
         this.businessMetrics = businessMetrics;
+        this.clientIpResolver = clientIpResolver;
     }
 
     /**
@@ -96,20 +103,7 @@ public class AuditService {
     }
 
     private String currentRequestIp() {
-
-        HttpServletRequest request = currentRequest();
-
-        if (request == null) {
-            return null;
-        }
-
-        String forwardedFor = request.getHeader("X-Forwarded-For");
-
-        if (forwardedFor != null && !forwardedFor.isBlank()) {
-            return forwardedFor.split(",")[0].trim();
-        }
-
-        return request.getRemoteAddr();
+        return clientIpResolver.resolve(currentRequest());
     }
 
     private String currentRequestUserAgent() {
