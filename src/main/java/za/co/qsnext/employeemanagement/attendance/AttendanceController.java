@@ -1,5 +1,8 @@
 package za.co.qsnext.employeemanagement.attendance;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.Operation;
+
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -16,6 +19,7 @@ import za.co.qsnext.employeemanagement.attendance.dto.ClockInRequest;
 import java.time.LocalDate;
 import java.util.UUID;
 
+@Tag(name = "Attendance", description = "Clock in/out, attendance records and corrections.")
 @RestController
 @RequestMapping("/api/v1/attendance")
 public class AttendanceController {
@@ -29,6 +33,7 @@ public class AttendanceController {
     }
 
     @PreAuthorize("hasAuthority('ATTENDANCE_READ')")
+    @Operation(summary = "Get by id")
     @GetMapping("/{attendanceId}")
     public ResponseEntity<AttendanceResponse> getById(
             @PathVariable UUID attendanceId
@@ -42,6 +47,7 @@ public class AttendanceController {
     }
 
     @PreAuthorize("hasAuthority('ATTENDANCE_READ')")
+    @Operation(summary = "Get by employee")
     @GetMapping("/employee/{employeeId}")
     public ResponseEntity<Page<AttendanceResponse>> getByEmployee(
             @PathVariable UUID employeeId,
@@ -59,6 +65,7 @@ public class AttendanceController {
     }
 
     @PreAuthorize("hasAuthority('ATTENDANCE_CREATE')")
+    @Operation(summary = "Create")
     @PostMapping
     public ResponseEntity<AttendanceResponse> create(
             @Valid @RequestBody ClockInRequest request
@@ -78,6 +85,7 @@ public class AttendanceController {
     }
 
     @PreAuthorize("hasAuthority('ATTENDANCE_CLOCK_IN')")
+    @Operation(summary = "Clock in")
     @PostMapping("/{attendanceId}/clock-in")
     public ResponseEntity<AttendanceResponse> clockIn(
             @PathVariable UUID attendanceId
@@ -93,6 +101,7 @@ public class AttendanceController {
     }
 
     @PreAuthorize("hasAuthority('ATTENDANCE_CLOCK_OUT')")
+    @Operation(summary = "Clock out")
     @PostMapping("/{attendanceId}/clock-out")
     public ResponseEntity<AttendanceResponse> clockOut(
             @PathVariable UUID attendanceId
@@ -108,6 +117,7 @@ public class AttendanceController {
     }
 
     @PreAuthorize("hasAuthority('ATTENDANCE_MARK_ABSENT')")
+    @Operation(summary = "Mark absent")
     @PatchMapping("/{attendanceId}/absent")
     public ResponseEntity<AttendanceResponse> markAbsent(
             @PathVariable UUID attendanceId
@@ -123,6 +133,7 @@ public class AttendanceController {
     }
 
     @PreAuthorize("hasAuthority('ATTENDANCE_MARK_LATE')")
+    @Operation(summary = "Mark late")
     @PatchMapping("/{attendanceId}/late")
     public ResponseEntity<AttendanceResponse> markLate(
             @PathVariable UUID attendanceId
@@ -138,6 +149,7 @@ public class AttendanceController {
     }
 
     @PreAuthorize("hasAuthority('ATTENDANCE_MARK_REMOTE')")
+    @Operation(summary = "Mark remote")
     @PatchMapping("/{attendanceId}/remote")
     public ResponseEntity<AttendanceResponse> markRemote(
             @PathVariable UUID attendanceId
@@ -153,6 +165,7 @@ public class AttendanceController {
     }
 
     @PreAuthorize("hasAuthority('ATTENDANCE_READ')")
+    @Operation(summary = "Get by date")
     @GetMapping("/date/{date}")
     public ResponseEntity<Page<AttendanceResponse>> getByDate(
             @PathVariable LocalDate date,

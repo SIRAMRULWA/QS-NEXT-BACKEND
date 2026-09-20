@@ -10,6 +10,8 @@ public record UserResponse(
         String username,
         String email,
         boolean enabled,
+        boolean locked,
+        OffsetDateTime lastLoginAt,
         OffsetDateTime createdAt,
         OffsetDateTime updatedAt
 ) {
@@ -20,6 +22,8 @@ public record UserResponse(
                 user.getUsername(),
                 user.getEmail(),
                 user.isEnabled(),
+                user.isLocked(),
+                user.getLastLoginAt(),
                 user.getCreatedAt(),
                 user.getUpdatedAt()
         );

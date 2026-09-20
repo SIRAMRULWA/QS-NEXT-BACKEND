@@ -8,12 +8,12 @@ import jakarta.servlet.http.HttpServletResponse;
 
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.util.UUID;
 
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
@@ -22,14 +22,17 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private static final String BEARER_PREFIX = "Bearer ";
 
     private final JwtService jwtService;
-    private final CustomUserDetailsService userDetailsService;
+    private final UserAuthorizationCacheService userAuthorizationCacheService;
+    private final TokenRevocationService tokenRevocationService;
 
     public JwtAuthenticationFilter(
             JwtService jwtService,
-            CustomUserDetailsService userDetailsService
+            UserAuthorizationCacheService userAuthorizationCacheService,
+            TokenRevocationService tokenRevocationService
     ) {
         this.jwtService = jwtService;
-        this.userDetailsService = userDetailsService;
+        this.userAuthorizationCacheService = userAuthorizationCacheService;
+        this.tokenRevocationService = tokenRevocationService;
     }
 
     @Override
@@ -69,34 +72,43 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     .getContext()
                     .getAuthentication() == null) {
 
-                UserDetails userDetails =
-                        userDetailsService.loadUserByUsername(username);
-
                 /*
-                 * Only access tokens may authenticate
-                 * protected API requests.
+                 * Only access tokens may authenticate protected API
+                 * requests, and only while still signed, unexpired and
+                 * not individually revoked (logout, password change,
+                 * detected refresh-token reuse).
                  */
                 if (jwtService.isAccessToken(token)
-                        && jwtService.isTokenValid(
-                        token,
-                        userDetails.getUsername()
-                )) {
+                        && jwtService.isTokenValid(token, username)) {
 
-                    UsernamePasswordAuthenticationToken authentication =
-                            new UsernamePasswordAuthenticationToken(
-                                    userDetails,
-                                    null,
-                                    userDetails.getAuthorities()
-                            );
+                    UUID tokenId = jwtService.extractTokenId(token);
 
-                    authentication.setDetails(
-                            new WebAuthenticationDetailsSource()
-                                    .buildDetails(request)
-                    );
+                    if (!tokenRevocationService.isRevoked(tokenId)) {
 
-                    SecurityContextHolder
-                            .getContext()
-                            .setAuthentication(authentication);
+                        userAuthorizationCacheService
+                                .findPrincipal(username)
+                                .map(CustomUserDetails::new)
+                                .filter(CustomUserDetails::isEnabled)
+                                .filter(CustomUserDetails::isAccountNonLocked)
+                                .ifPresent(userDetails -> {
+
+                                    UsernamePasswordAuthenticationToken authentication =
+                                            new UsernamePasswordAuthenticationToken(
+                                                    userDetails,
+                                                    null,
+                                                    userDetails.getAuthorities()
+                                            );
+
+                                    authentication.setDetails(
+                                            new WebAuthenticationDetailsSource()
+                                                    .buildDetails(request)
+                                    );
+
+                                    SecurityContextHolder
+                                            .getContext()
+                                            .setAuthentication(authentication);
+                                });
+                    }
                 }
             }
 

@@ -11,6 +11,8 @@ import za.co.qsnext.employeemanagement.employee.EmployeeService;
 import za.co.qsnext.employeemanagement.exception.BusinessRuleException;
 import za.co.qsnext.employeemanagement.exception.EmployeeNotFoundException;
 import za.co.qsnext.employeemanagement.exception.TimesheetNotFoundException;
+import za.co.qsnext.employeemanagement.notification.NotificationPublisher;
+import za.co.qsnext.employeemanagement.notification.NotificationType;
 import za.co.qsnext.employeemanagement.user.UserService;
 
 import java.math.BigDecimal;
@@ -27,19 +29,22 @@ public class TimesheetService {
     private final EmployeeService employeeService;
     private final UserService userService;
     private final EmployeeRepository employeeRepository;
+    private final NotificationPublisher notificationPublisher;
 
     public TimesheetService(
             TimesheetRepository timesheetRepository,
             TimesheetEntryRepository timesheetEntryRepository,
             EmployeeService employeeService,
             UserService userService,
-            EmployeeRepository employeeRepository
+            EmployeeRepository employeeRepository,
+            NotificationPublisher notificationPublisher
     ) {
         this.timesheetRepository = timesheetRepository;
         this.timesheetEntryRepository = timesheetEntryRepository;
         this.employeeService = employeeService;
         this.userService = userService;
         this.employeeRepository = employeeRepository;
+        this.notificationPublisher = notificationPublisher;
     }
 
     /*
@@ -389,9 +394,19 @@ public class TimesheetService {
                 approverId
         );
 
-        return timesheetRepository.saveAndFlush(
+        Timesheet approved = timesheetRepository.saveAndFlush(
                 timesheet
         );
+
+        notifyEmployee(
+                approved.getEmployeeId(),
+                NotificationType.TIMESHEET_APPROVED,
+                "Timesheet approved",
+                "Your timesheet for " + approved.getPeriodStart()
+                        + " to " + approved.getPeriodEnd() + " has been approved."
+        );
+
+        return approved;
     }
 
     /*
@@ -417,9 +432,31 @@ public class TimesheetService {
 
         timesheet.reject();
 
-        return timesheetRepository.saveAndFlush(
+        Timesheet rejected = timesheetRepository.saveAndFlush(
                 timesheet
         );
+
+        notifyEmployee(
+                rejected.getEmployeeId(),
+                NotificationType.TIMESHEET_REJECTED,
+                "Timesheet rejected",
+                "Your timesheet for " + rejected.getPeriodStart()
+                        + " to " + rejected.getPeriodEnd() + " has been rejected."
+        );
+
+        return rejected;
+    }
+
+    private void notifyEmployee(
+            UUID employeeId,
+            NotificationType type,
+            String title,
+            String message
+    ) {
+        employeeRepository.findById(employeeId)
+                .ifPresent(employee -> notificationPublisher.publish(
+                        employee.getUserId(), type, title, message
+                ));
     }
 
     /*

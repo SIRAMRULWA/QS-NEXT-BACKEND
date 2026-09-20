@@ -3,6 +3,8 @@ package za.co.qsnext.employeemanagement.exception;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
 
+import za.co.qsnext.employeemanagement.ai.AiProviderException;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
@@ -23,6 +25,214 @@ public class GlobalExceptionHandler {
         return buildResponse(
                 HttpStatus.NOT_FOUND,
                 "EMPLOYEE_NOT_FOUND",
+                exception.getMessage(),
+                request.getRequestURI()
+        );
+    }
+
+    @ExceptionHandler(CalendarEventNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleCalendarEventNotFound(
+            CalendarEventNotFoundException exception,
+            HttpServletRequest request
+    ) {
+        return buildResponse(
+                HttpStatus.NOT_FOUND,
+                "CALENDAR_EVENT_NOT_FOUND",
+                exception.getMessage(),
+                request.getRequestURI()
+        );
+    }
+
+    @ExceptionHandler(OnboardingNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleOnboardingNotFound(
+            OnboardingNotFoundException exception,
+            HttpServletRequest request
+    ) {
+        return buildResponse(
+                HttpStatus.NOT_FOUND,
+                "ONBOARDING_NOT_FOUND",
+                exception.getMessage(),
+                request.getRequestURI()
+        );
+    }
+
+    @ExceptionHandler(SchedulingNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleSchedulingNotFound(
+            SchedulingNotFoundException exception,
+            HttpServletRequest request
+    ) {
+        return buildResponse(
+                HttpStatus.NOT_FOUND,
+                "SCHEDULING_NOT_FOUND",
+                exception.getMessage(),
+                request.getRequestURI()
+        );
+    }
+
+    @ExceptionHandler(DocumentNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleDocumentNotFound(
+            DocumentNotFoundException exception,
+            HttpServletRequest request
+    ) {
+        return buildResponse(
+                HttpStatus.NOT_FOUND,
+                "DOCUMENT_NOT_FOUND",
+                exception.getMessage(),
+                request.getRequestURI()
+        );
+    }
+
+    @ExceptionHandler(SignatureRequestNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleSignatureRequestNotFound(
+            SignatureRequestNotFoundException exception,
+            HttpServletRequest request
+    ) {
+        return buildResponse(
+                HttpStatus.NOT_FOUND,
+                "SIGNATURE_REQUEST_NOT_FOUND",
+                exception.getMessage(),
+                request.getRequestURI()
+        );
+    }
+
+    @ExceptionHandler(ComplianceNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleComplianceNotFound(
+            ComplianceNotFoundException exception,
+            HttpServletRequest request
+    ) {
+        return buildResponse(
+                HttpStatus.NOT_FOUND,
+                "COMPLIANCE_NOT_FOUND",
+                exception.getMessage(),
+                request.getRequestURI()
+        );
+    }
+
+    @ExceptionHandler(LearningNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleLearningNotFound(
+            LearningNotFoundException exception,
+            HttpServletRequest request
+    ) {
+        return buildResponse(
+                HttpStatus.NOT_FOUND,
+                "LEARNING_NOT_FOUND",
+                exception.getMessage(),
+                request.getRequestURI()
+        );
+    }
+
+    @ExceptionHandler(PerformanceNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handlePerformanceNotFound(
+            PerformanceNotFoundException exception,
+            HttpServletRequest request
+    ) {
+        return buildResponse(
+                HttpStatus.NOT_FOUND,
+                "PERFORMANCE_NOT_FOUND",
+                exception.getMessage(),
+                request.getRequestURI()
+        );
+    }
+
+    @ExceptionHandler(RecognitionNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleRecognitionNotFound(
+            RecognitionNotFoundException exception,
+            HttpServletRequest request
+    ) {
+        return buildResponse(
+                HttpStatus.NOT_FOUND,
+                "RECOGNITION_NOT_FOUND",
+                exception.getMessage(),
+                request.getRequestURI()
+        );
+    }
+
+    @ExceptionHandler(ExpenseNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleExpenseNotFound(
+            ExpenseNotFoundException exception,
+            HttpServletRequest request
+    ) {
+        return buildResponse(
+                HttpStatus.NOT_FOUND,
+                "EXPENSE_NOT_FOUND",
+                exception.getMessage(),
+                request.getRequestURI()
+        );
+    }
+
+    @ExceptionHandler(IntegrationNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleIntegrationNotFound(
+            IntegrationNotFoundException exception,
+            HttpServletRequest request
+    ) {
+        return buildResponse(
+                HttpStatus.NOT_FOUND,
+                "INTEGRATION_NOT_FOUND",
+                exception.getMessage(),
+                request.getRequestURI()
+        );
+    }
+
+    @ExceptionHandler(RecruitmentNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleRecruitmentNotFound(
+            RecruitmentNotFoundException exception,
+            HttpServletRequest request
+    ) {
+        return buildResponse(
+                HttpStatus.NOT_FOUND,
+                "RECRUITMENT_NOT_FOUND",
+                exception.getMessage(),
+                request.getRequestURI()
+        );
+    }
+
+    @ExceptionHandler(MobileDeviceNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleMobileDeviceNotFound(
+            MobileDeviceNotFoundException exception,
+            HttpServletRequest request
+    ) {
+        return buildResponse(
+                HttpStatus.NOT_FOUND,
+                "MOBILE_DEVICE_NOT_FOUND",
+                exception.getMessage(),
+                request.getRequestURI()
+        );
+    }
+
+    @ExceptionHandler(AiNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleAiNotFound(
+            AiNotFoundException exception,
+            HttpServletRequest request
+    ) {
+        return buildResponse(
+                HttpStatus.NOT_FOUND,
+                "AI_SUGGESTION_NOT_FOUND",
+                exception.getMessage(),
+                request.getRequestURI()
+        );
+    }
+
+    @ExceptionHandler(AiProviderException.class)
+    public ResponseEntity<ErrorResponse> handleAiProviderFailure(
+            AiProviderException exception,
+            HttpServletRequest request
+    ) {
+        return buildResponse(
+                HttpStatus.SERVICE_UNAVAILABLE,
+                "AI_PROVIDER_UNAVAILABLE",
+                "The AI provider is temporarily unavailable. Please try again later.",
+                request.getRequestURI()
+        );
+    }
+
+    @ExceptionHandler(PayrollNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handlePayrollNotFound(
+            PayrollNotFoundException exception,
+            HttpServletRequest request
+    ) {
+        return buildResponse(
+                HttpStatus.NOT_FOUND,
+                "PAYROLL_NOT_FOUND",
                 exception.getMessage(),
                 request.getRequestURI()
         );
@@ -127,6 +337,19 @@ public class GlobalExceptionHandler {
         return buildResponse(
                 HttpStatus.UNAUTHORIZED,
                 "UNAUTHORIZED",
+                exception.getMessage(),
+                request.getRequestURI()
+        );
+    }
+
+    @ExceptionHandler(AccountLockedException.class)
+    public ResponseEntity<ErrorResponse> handleAccountLocked(
+            AccountLockedException exception,
+            HttpServletRequest request
+    ) {
+        return buildResponse(
+                HttpStatus.LOCKED,
+                "ACCOUNT_LOCKED",
                 exception.getMessage(),
                 request.getRequestURI()
         );

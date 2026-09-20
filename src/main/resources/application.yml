@@ -10,6 +10,33 @@ spring:
     username: ${DB_USERNAME:postgres}
     password: ${DB_PASSWORD}
 
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USERNAME:guest}
+    password: ${RABBITMQ_PASSWORD:guest}
+
+  mail:
+    host: ${MAIL_HOST:localhost}
+    port: ${MAIL_PORT:1025}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: ${MAIL_SMTP_AUTH:false}
+          starttls:
+            enable: ${MAIL_SMTP_STARTTLS:false}
+          connectiontimeout: 5000
+          timeout: 5000
+          writetimeout: 5000
+
   jpa:
     open-in-view: false
     hibernate:
@@ -25,6 +52,11 @@ spring:
 
   flyway:
     enabled: true
+
+  servlet:
+    multipart:
+      max-file-size: ${DOCUMENT_MAX_FILE_SIZE:10MB}
+      max-request-size: ${DOCUMENT_MAX_REQUEST_SIZE:10MB}
 
 server:
   port: ${SERVER_PORT:8080}
@@ -71,3 +103,35 @@ security:
     secret: ${JWT_SECRET}
     access-token-expiration: ${JWT_ACCESS_TOKEN_EXPIRATION:900000}
     refresh-token-expiration: ${JWT_REFRESH_TOKEN_EXPIRATION:604800000}
+
+  auth:
+    max-failed-login-attempts: ${AUTH_MAX_FAILED_LOGIN_ATTEMPTS:5}
+    account-lock-duration-minutes: ${AUTH_ACCOUNT_LOCK_DURATION_MINUTES:15}
+    password-reset-token-expiration-minutes: ${AUTH_PASSWORD_RESET_TOKEN_EXPIRATION_MINUTES:30}
+
+  cache:
+    default-ttl-minutes: ${CACHE_DEFAULT_TTL_MINUTES:10}
+    user-principal-ttl-minutes: ${CACHE_USER_PRINCIPAL_TTL_MINUTES:5}
+
+  rate-limit:
+    max-requests: ${RATE_LIMIT_MAX_REQUESTS:10}
+    window-seconds: ${RATE_LIMIT_WINDOW_SECONDS:60}
+
+email:
+  from-address: ${EMAIL_FROM_ADDRESS:no-reply@qsnext.co.za}
+
+  consumer:
+    max-attempts: ${EMAIL_CONSUMER_MAX_ATTEMPTS:3}
+    initial-interval-ms: ${EMAIL_CONSUMER_INITIAL_INTERVAL_MS:2000}
+    backoff-multiplier: ${EMAIL_CONSUMER_BACKOFF_MULTIPLIER:2.0}
+    max-interval-ms: ${EMAIL_CONSUMER_MAX_INTERVAL_MS:30000}
+
+  outbox:
+    sweep-interval-ms: ${EMAIL_OUTBOX_SWEEP_INTERVAL_MS:60000}
+    stuck-threshold-seconds: ${EMAIL_OUTBOX_STUCK_THRESHOLD_SECONDS:120}
+    sweep-batch-size: ${EMAIL_OUTBOX_SWEEP_BATCH_SIZE:50}
+
+document:
+  storage:
+    local:
+      base-path: ${DOCUMENT_STORAGE_LOCAL_BASE_PATH:./data/documents}

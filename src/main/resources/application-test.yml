@@ -24,3 +24,65 @@ security:
     secret: test-only-jwt-signing-secret-do-not-use-in-production-0123456789
     access-token-expiration: 900000
     refresh-token-expiration: 604800000
+
+  # The production default (10 requests/60s) is meant to gate a single real
+  # client. Every *IntegrationTest shares one Spring context, one Redis
+  # instance and one MockMvc-resolved remote address, so dozens of test
+  # classes registering users in the same run would otherwise all trip the
+  # same per-IP counter well before any one class's own assertions run.
+  rate-limit:
+    max-requests: 100000
+    window-seconds: 60
+
+# Fast retry/backoff so tests that exercise the retry -> DLQ path don't
+# have to wait out production-sized delays.
+email:
+  from-address: no-reply@qsnext.co.za
+
+  consumer:
+    max-attempts: 3
+    initial-interval-ms: 20
+    backoff-multiplier: 2.0
+    max-interval-ms: 100
+    # A single consumer thread (the implicit default everywhere else) is
+    # plenty for one real deployment's traffic, but this suite's ~40
+    # *IntegrationTest classes share one Spring context, one queue and
+    # that one thread - so every class's WELCOME/PASSWORD_RESET/
+    # notification email queues up behind whatever the rest of the suite
+    # is still sending. EmailConsumer is now safe to run concurrently
+    # (it tolerates a losing race on the same message via
+    # ObjectOptimisticLockingFailureException), so a handful of
+    # consumers here just gives the suite enough real throughput that a
+    # healthy email reaches SENT within a test's own wait window instead
+    # of merely waiting its turn.
+    concurrency: 5
+    max-concurrency: 5
+
+  outbox:
+    sweep-interval-ms: 1000
+    # This value has swung twice already, for two different reasons, and
+    # both still hold - which is why it now lands somewhere in between
+    # instead of at either extreme:
+    #
+    # - 1 second (the original) was too aggressive: the sweep would
+    #   republish an email that was still legitimately mid-flight through
+    #   its normal after-commit publish (not lost at all), so the same row
+    #   got consumed twice.
+    # - 30 seconds (the first fix) went too far the other way:
+    #   EmailOutboxIntegrationTest waits at most 20s for its own email, so
+    #   if that email's initial async publish is ever missed or delayed,
+    #   the sweep's own safety net wouldn't even attempt a rescue until
+    #   after the test had already given up - confirmed by a run whose
+    #   log showed zero consumer or sweep activity for this email's entire
+    #   20-second window.
+    #
+    # 30s stopped being necessary for the original reason once EmailConsumer
+    # itself became tolerant of a losing race against a duplicate delivery
+    # (ObjectOptimisticLockingFailureException is now caught and treated as
+    # benign, not fatal) - so the sweep no longer needs to stay out of the
+    # way of an in-flight publish to avoid causing damage; it only needs to
+    # not fire while a normal publish is still genuinely in flight. A few
+    # seconds is enough margin for that without leaving a genuinely missed
+    # publish stuck past this suite's own wait budgets.
+    stuck-threshold-seconds: 3
+    sweep-batch-size: 50

@@ -10,6 +10,7 @@ import za.co.qsnext.employeemanagement.employee.EmployeeService;
 import za.co.qsnext.employeemanagement.exception.BusinessRuleException;
 
 import java.time.LocalDate;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -227,6 +228,30 @@ public class AttendanceService {
         return attendanceRepository.findByEmployeeId(
                 employee.getId(),
                 pageable
+        );
+    }
+
+    /**
+     * Unlike {@link #getByEmployeeAndDate}, this never throws for a
+     * missing record - not having clocked in yet today is the normal
+     * case for a dashboard-style read, not an error.
+     */
+    @Transactional(readOnly = true)
+    public Optional<Attendance> getOwnAttendanceForDate(
+            UUID userId,
+            LocalDate date
+    ) {
+        Employee employee = employeeRepository
+                .findByUserId(userId)
+                .orElseThrow(() ->
+                        new BusinessRuleException(
+                                "Employee profile not found"
+                        )
+                );
+
+        return attendanceRepository.findByEmployeeIdAndAttendanceDate(
+                employee.getId(),
+                date
         );
     }
 

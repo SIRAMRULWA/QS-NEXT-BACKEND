@@ -62,6 +62,18 @@ public class User {
     private boolean enabled = true;
 
     @Column(
+            name = "failed_login_attempts",
+            nullable = false
+    )
+    private int failedLoginAttempts = 0;
+
+    @Column(name = "locked_until")
+    private OffsetDateTime lockedUntil;
+
+    @Column(name = "last_login_at")
+    private OffsetDateTime lastLoginAt;
+
+    @Column(
             name = "created_at",
             nullable = false,
             updatable = false
@@ -127,6 +139,38 @@ public class User {
 
     public boolean isEnabled() {
         return enabled;
+    }
+
+    public int getFailedLoginAttempts() {
+        return failedLoginAttempts;
+    }
+
+    public OffsetDateTime getLockedUntil() {
+        return lockedUntil;
+    }
+
+    public OffsetDateTime getLastLoginAt() {
+        return lastLoginAt;
+    }
+
+    public boolean isLocked() {
+        return lockedUntil != null
+                && lockedUntil.isAfter(OffsetDateTime.now());
+    }
+
+    public int incrementFailedLoginAttempts() {
+        this.failedLoginAttempts++;
+        return this.failedLoginAttempts;
+    }
+
+    public void lockUntil(OffsetDateTime until) {
+        this.lockedUntil = until;
+    }
+
+    public void recordSuccessfulLogin() {
+        this.failedLoginAttempts = 0;
+        this.lockedUntil = null;
+        this.lastLoginAt = OffsetDateTime.now();
     }
 
     public OffsetDateTime getCreatedAt() {

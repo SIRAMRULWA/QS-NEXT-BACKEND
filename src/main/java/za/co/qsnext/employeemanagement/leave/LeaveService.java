@@ -4,17 +4,26 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import za.co.qsnext.employeemanagement.calendar.CalendarEvent;
+import za.co.qsnext.employeemanagement.calendar.CalendarService;
 import za.co.qsnext.employeemanagement.employee.Employee;
 import za.co.qsnext.employeemanagement.employee.EmployeeRepository;
 import za.co.qsnext.employeemanagement.employee.EmployeeService;
 import za.co.qsnext.employeemanagement.exception.BusinessRuleException;
 import za.co.qsnext.employeemanagement.exception.EmployeeNotFoundException;
 import za.co.qsnext.employeemanagement.exception.LeaveRequestNotFoundException;
+import za.co.qsnext.employeemanagement.leave.dto.LeaveBalanceResponse;
 import za.co.qsnext.employeemanagement.leave.dto.LeaveResponse;
+import za.co.qsnext.employeemanagement.notification.NotificationPublisher;
+import za.co.qsnext.employeemanagement.notification.NotificationType;
 import za.co.qsnext.employeemanagement.user.UserService;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -26,18 +35,25 @@ public class LeaveService {
     private final EmployeeService employeeService;
     private final UserService userService;
     private final EmployeeRepository employeeRepository;
+    private final NotificationPublisher notificationPublisher;
+    private final CalendarService calendarService;
 
     public LeaveService(
             LeaveRequestRepository leaveRequestRepository,
             LeaveBalanceRepository leaveBalanceRepository,
             EmployeeService employeeService,
-            UserService userService, EmployeeRepository employeeRepository
+            UserService userService,
+            EmployeeRepository employeeRepository,
+            NotificationPublisher notificationPublisher,
+            CalendarService calendarService
     ) {
         this.leaveRequestRepository = leaveRequestRepository;
         this.leaveBalanceRepository = leaveBalanceRepository;
         this.employeeService = employeeService;
         this.userService = userService;
         this.employeeRepository = employeeRepository;
+        this.notificationPublisher = notificationPublisher;
+        this.calendarService = calendarService;
     }
 
     public LeaveRequest getById(UUID leaveRequestId) {
@@ -170,6 +186,17 @@ public class LeaveService {
 
         leaveRequest.approve(approverId);
 
+        notifyEmployee(
+                leaveRequest.getEmployeeId(),
+                NotificationType.LEAVE_REQUEST_APPROVED,
+                "Leave request approved",
+                "Your " + leaveRequest.getLeaveType() + " leave request from "
+                        + leaveRequest.getStartDate() + " to " + leaveRequest.getEndDate()
+                        + " has been approved."
+        );
+
+        recordLeaveCalendarEvent(leaveRequest);
+
         return leaveRequest;
     }
 
@@ -186,7 +213,43 @@ public class LeaveService {
 
         leaveRequest.reject();
 
+        notifyEmployee(
+                leaveRequest.getEmployeeId(),
+                NotificationType.LEAVE_REQUEST_REJECTED,
+                "Leave request rejected",
+                "Your " + leaveRequest.getLeaveType() + " leave request from "
+                        + leaveRequest.getStartDate() + " to " + leaveRequest.getEndDate()
+                        + " has been rejected."
+        );
+
         return leaveRequest;
+    }
+
+    private void notifyEmployee(
+            UUID employeeId,
+            NotificationType type,
+            String title,
+            String message
+    ) {
+        employeeRepository.findById(employeeId)
+                .ifPresent(employee -> notificationPublisher.publish(
+                        employee.getUserId(), type, title, message
+                ));
+    }
+
+    private void recordLeaveCalendarEvent(LeaveRequest leaveRequest) {
+
+        employeeRepository.findById(leaveRequest.getEmployeeId()).ifPresent(employee ->
+                calendarService.recordSystemEvent(
+                        employee.getFirstName() + " " + employee.getLastName()
+                                + " - " + leaveRequest.getLeaveType() + " leave",
+                        CalendarEvent.TYPE_LEAVE,
+                        leaveRequest.getStartDate().atTime(LocalTime.MIN).atOffset(ZoneOffset.UTC),
+                        leaveRequest.getEndDate().atTime(LocalTime.MAX).atOffset(ZoneOffset.UTC),
+                        employee.getUserId(),
+                        employee.getDepartmentId()
+                )
+        );
     }
 
     @Transactional
@@ -258,6 +321,26 @@ public class LeaveService {
                         pageable
                 )
                 .map(LeaveResponse::from);
+    }
+
+    @Transactional(readOnly = true)
+    public List<LeaveBalanceResponse> getOwnLeaveBalances(
+            UUID userId,
+            Integer leaveYear
+    ) {
+        Employee employee = employeeRepository
+                .findByUserId(userId)
+                .orElseThrow(() ->
+                        new EmployeeNotFoundException(
+                                "Employee profile not found"
+                        )
+                );
+
+        return leaveBalanceRepository
+                .findByEmployeeIdAndLeaveYear(employee.getId(), leaveYear)
+                .stream()
+                .map(LeaveBalanceResponse::from)
+                .toList();
     }
 
     @Transactional

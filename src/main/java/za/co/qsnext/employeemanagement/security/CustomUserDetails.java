@@ -14,24 +14,47 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+/**
+ * Two ways to build this: from a full {@link User} entity (the login path,
+ * via {@link CustomUserDetailsService}, which needs the password hash for
+ * credential matching), or from a {@link CachedUserPrincipal} (the
+ * per-request authorization path, via {@link JwtAuthenticationFilter},
+ * which is backed by a Redis cache and deliberately never carries a
+ * password hash). {@link #getUser()} is only populated in the former case.
+ */
 public class CustomUserDetails implements UserDetails {
 
     private final User user;
+    private final UUID userId;
+    private final String username;
+    private final String passwordHash;
+    private final boolean enabled;
+    private final boolean accountNonLocked;
+    private final Set<GrantedAuthority> authorities;
 
     public CustomUserDetails(User user) {
         this.user = user;
+        this.userId = user.getId();
+        this.username = user.getUsername();
+        this.passwordHash = user.getPasswordHash();
+        this.enabled = user.isEnabled();
+        this.accountNonLocked = !user.isLocked();
+        this.authorities = computeAuthorities(user);
     }
 
-    public UUID getUserId() {
-        return user.getId();
+    public CustomUserDetails(CachedUserPrincipal principal) {
+        this.user = null;
+        this.userId = principal.userId();
+        this.username = principal.username();
+        this.passwordHash = null;
+        this.enabled = principal.enabled();
+        this.accountNonLocked = principal.accountNonLocked();
+        this.authorities = principal.authorities().stream()
+                .map(SimpleGrantedAuthority::new)
+                .collect(Collectors.toUnmodifiableSet());
     }
 
-    public User getUser() {
-        return user;
-    }
-
-    @Override
-    public Collection<? extends GrantedAuthority> getAuthorities() {
+    private static Set<GrantedAuthority> computeAuthorities(User user) {
 
         Set<Role> roles = user.getRoles();
 
@@ -55,17 +78,35 @@ public class CustomUserDetails implements UserDetails {
                         roleAuthorities,
                         permissionAuthorities
                 )
-                .collect(Collectors.toSet());
+                .collect(Collectors.toUnmodifiableSet());
+    }
+
+    public UUID getUserId() {
+        return userId;
+    }
+
+    /**
+     * The full user entity. Only populated when this instance was built
+     * from the login path ({@link CustomUserDetailsService}); {@code null}
+     * when built from the cached, per-request authorization path.
+     */
+    public User getUser() {
+        return user;
+    }
+
+    @Override
+    public Collection<? extends GrantedAuthority> getAuthorities() {
+        return authorities;
     }
 
     @Override
     public String getPassword() {
-        return user.getPasswordHash();
+        return passwordHash;
     }
 
     @Override
     public String getUsername() {
-        return user.getUsername();
+        return username;
     }
 
     @Override
@@ -75,7 +116,7 @@ public class CustomUserDetails implements UserDetails {
 
     @Override
     public boolean isAccountNonLocked() {
-        return true;
+        return accountNonLocked;
     }
 
     @Override
@@ -85,6 +126,6 @@ public class CustomUserDetails implements UserDetails {
 
     @Override
     public boolean isEnabled() {
-        return user.isEnabled();
+        return enabled;
     }
 }

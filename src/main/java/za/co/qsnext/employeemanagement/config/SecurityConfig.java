@@ -16,6 +16,7 @@ import org.springframework.security.config.annotation.method.configuration.Enabl
 
 import za.co.qsnext.employeemanagement.security.CustomUserDetailsService;
 import za.co.qsnext.employeemanagement.security.JwtAuthenticationFilter;
+import za.co.qsnext.employeemanagement.security.RateLimitFilter;
 import za.co.qsnext.employeemanagement.security.RestAccessDeniedHandler;
 import za.co.qsnext.employeemanagement.security.RestAuthenticationEntryPoint;
 
@@ -26,17 +27,20 @@ public class SecurityConfig {
 
     private final CustomUserDetailsService userDetailsService;
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final RateLimitFilter rateLimitFilter;
     private final RestAuthenticationEntryPoint authenticationEntryPoint;
     private final RestAccessDeniedHandler accessDeniedHandler;
 
     public SecurityConfig(
             CustomUserDetailsService userDetailsService,
             JwtAuthenticationFilter jwtAuthenticationFilter,
+            RateLimitFilter rateLimitFilter,
             RestAuthenticationEntryPoint authenticationEntryPoint,
             RestAccessDeniedHandler accessDeniedHandler
     ) {
         this.userDetailsService = userDetailsService;
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
+        this.rateLimitFilter = rateLimitFilter;
         this.authenticationEntryPoint = authenticationEntryPoint;
         this.accessDeniedHandler = accessDeniedHandler;
     }
@@ -91,7 +95,11 @@ public class SecurityConfig {
 
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
-                                "/api/v1/auth/**",
+                                "/api/v1/auth/login",
+                                "/api/v1/auth/register",
+                                "/api/v1/auth/refresh",
+                                "/api/v1/auth/forgot-password",
+                                "/api/v1/auth/reset-password",
                                 "/api-docs/**",
                                 "/swagger-ui/**",
                                 "/swagger-ui.html",
@@ -99,6 +107,11 @@ public class SecurityConfig {
                         )
                         .permitAll()
 
+                        /*
+                         * Logout and change-password identify the acting
+                         * user from the authenticated principal, so they
+                         * must not be reachable anonymously.
+                         */
                         .anyRequest()
                         .authenticated()
                 )
@@ -106,6 +119,11 @@ public class SecurityConfig {
                 .addFilterBefore(
                         jwtAuthenticationFilter,
                         UsernamePasswordAuthenticationFilter.class
+                )
+
+                .addFilterBefore(
+                        rateLimitFilter,
+                        JwtAuthenticationFilter.class
                 );
 
         return http.build();

@@ -1,5 +1,8 @@
 package za.co.qsnext.employeemanagement.user;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.Operation;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -7,6 +10,7 @@ import za.co.qsnext.employeemanagement.user.dto.UserResponse;
 
 import java.util.UUID;
 
+@Tag(name = "Users", description = "User accounts, roles and permissions.")
 @RestController
 @RequestMapping("/api/v1/users")
 public class UserController {
@@ -18,6 +22,7 @@ public class UserController {
     }
 
     @PreAuthorize("hasAuthority('USER_READ')")
+    @Operation(summary = "Get by id")
     @GetMapping("/{userId}")
     public ResponseEntity<UserResponse> getById(
             @PathVariable UUID userId
@@ -31,6 +36,7 @@ public class UserController {
     }
 
     @PreAuthorize("hasAuthority('USER_READ')")
+    @Operation(summary = "Get by username")
     @GetMapping("/username/{username}")
     public ResponseEntity<UserResponse> getByUsername(
             @PathVariable String username
@@ -44,6 +50,7 @@ public class UserController {
     }
 
     @PreAuthorize("hasAuthority('USER_DISABLE')")
+    @Operation(summary = "Disable")
     @PatchMapping("/{userId}/disable")
     public ResponseEntity<Void> disable(
             @PathVariable UUID userId
@@ -55,6 +62,7 @@ public class UserController {
     }
 
     @PreAuthorize("hasAuthority('USER_ENABLE')")
+    @Operation(summary = "Enable")
     @PatchMapping("/{userId}/enable")
     public ResponseEntity<Void> enable(
             @PathVariable UUID userId

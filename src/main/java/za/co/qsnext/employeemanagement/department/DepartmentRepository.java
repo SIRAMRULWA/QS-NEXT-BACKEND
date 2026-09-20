@@ -1,5 +1,7 @@
 package za.co.qsnext.employeemanagement.department;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.Optional;
@@ -10,4 +12,6 @@ public interface DepartmentRepository extends JpaRepository<Department, UUID> {
     Optional<Department> findByName(String name);
 
     boolean existsByName(String name);
+
+    Page<Department> findByNameContainingIgnoreCase(String name, Pageable pageable);
 }

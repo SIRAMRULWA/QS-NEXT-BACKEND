@@ -30,6 +30,9 @@ public class Employee {
     @Column(name = "department_id", nullable = false)
     private UUID departmentId;
 
+    @Column(name = "manager_id")
+    private UUID managerId;
+
     @Column(
             name = "employee_number",
             nullable = false,
@@ -119,6 +122,10 @@ public class Employee {
         return departmentId;
     }
 
+    public UUID getManagerId() {
+        return managerId;
+    }
+
     public String getEmployeeNumber() {
         return employeeNumber;
     }
@@ -175,5 +182,9 @@ public class Employee {
 
     public void changeStatus(String employmentStatus) {
         this.employmentStatus = employmentStatus;
+    }
+
+    public void assignManager(UUID managerId) {
+        this.managerId = managerId;
     }
 }

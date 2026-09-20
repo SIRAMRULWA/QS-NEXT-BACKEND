@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import za.co.qsnext.employeemanagement.exception.NotificationNotFoundException;
 import za.co.qsnext.employeemanagement.exception.UserNotFoundException;
+import za.co.qsnext.employeemanagement.notification.dto.NotificationPreferenceResponse;
 import za.co.qsnext.employeemanagement.notification.dto.NotificationResponse;
 import za.co.qsnext.employeemanagement.user.UserRepository;
 
@@ -18,6 +19,7 @@ import java.util.UUID;
 public class NotificationService {
 
     private final NotificationRepository notificationRepository;
+    private final NotificationPreferenceRepository notificationPreferenceRepository;
     private final UserRepository userRepository;
 
     public Page<NotificationResponse> getByUser(
@@ -96,5 +98,30 @@ public class NotificationService {
                     "User not found: " + userId
             );
         }
+    }
+
+    public NotificationPreferenceResponse getPreference(UUID userId) {
+
+        return notificationPreferenceRepository.findByUserId(userId)
+                .map(NotificationPreferenceResponse::from)
+                .orElseGet(NotificationPreferenceResponse::defaults);
+    }
+
+    @Transactional
+    public NotificationPreferenceResponse updatePreference(
+            UUID userId,
+            boolean inAppEnabled,
+            boolean emailEnabled
+    ) {
+
+        NotificationPreference preference = notificationPreferenceRepository
+                .findByUserId(userId)
+                .orElseGet(() -> new NotificationPreference(userId));
+
+        preference.update(inAppEnabled, emailEnabled);
+
+        return NotificationPreferenceResponse.from(
+                notificationPreferenceRepository.save(preference)
+        );
     }
 }

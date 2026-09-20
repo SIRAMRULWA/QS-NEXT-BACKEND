@@ -1,5 +1,8 @@
 package za.co.qsnext.employeemanagement.employee;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.Operation;
+
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -16,6 +19,7 @@ import za.co.qsnext.employeemanagement.employee.dto.UpdateEmployeeRequest;
 
 import java.util.UUID;
 
+@Tag(name = "Employees", description = "Employee profile management.")
 @RestController
 @RequestMapping("/api/v1/employees")
 public class EmployeeController {
@@ -27,6 +31,7 @@ public class EmployeeController {
     }
 
     @PreAuthorize("hasAuthority('EMPLOYEE_READ')")
+    @Operation(summary = "Get all")
     @GetMapping
     public ResponseEntity<Page<EmployeeResponse>> getAll(
             @RequestParam(defaultValue = "0") int page,
@@ -46,6 +51,7 @@ public class EmployeeController {
             "hasAuthority('EMPLOYEE_READ') and " +
                     "@employeeAuthorizationService.canRead(#employeeId, authentication)"
     )
+    @Operation(summary = "Get by id")
     @GetMapping("/{employeeId}")
     public ResponseEntity<EmployeeResponse> getById(
             @PathVariable UUID employeeId
@@ -60,6 +66,7 @@ public class EmployeeController {
     }
 
     @PreAuthorize("hasAuthority('EMPLOYEE_READ')")
+    @Operation(summary = "Get by department")
     @GetMapping("/department/{departmentId}")
     public ResponseEntity<Page<EmployeeResponse>> getByDepartment(
             @PathVariable UUID departmentId,
@@ -81,6 +88,7 @@ public class EmployeeController {
     }
 
     @PreAuthorize("hasAuthority('EMPLOYEE_READ')")
+    @Operation(summary = "Get by status")
     @GetMapping("/status/{status}")
     public ResponseEntity<Page<EmployeeResponse>> getByStatus(
             @PathVariable String status,
@@ -99,6 +107,7 @@ public class EmployeeController {
     }
 
     @PreAuthorize("hasAuthority('EMPLOYEE_READ')")
+    @Operation(summary = "Search")
     @GetMapping("/search")
     public ResponseEntity<Page<EmployeeResponse>> search(
             @RequestParam String lastName,
@@ -120,6 +129,7 @@ public class EmployeeController {
     }
 
     @PreAuthorize("hasAuthority('EMPLOYEE_CREATE')")
+    @Operation(summary = "Create")
     @PostMapping
     public ResponseEntity<EmployeeResponse> create(
             @Valid @RequestBody CreateEmployeeRequest request
@@ -145,6 +155,7 @@ public class EmployeeController {
     }
 
     @PreAuthorize("hasAuthority('EMPLOYEE_UPDATE')")
+    @Operation(summary = "Update")
     @PutMapping("/{employeeId}")
     public ResponseEntity<EmployeeResponse> update(
             @PathVariable UUID employeeId,
@@ -167,6 +178,7 @@ public class EmployeeController {
     }
 
     @PreAuthorize("hasAuthority('EMPLOYEE_STATUS_UPDATE')")
+    @Operation(summary = "Change status")
     @PatchMapping("/{employeeId}/status")
     public ResponseEntity<EmployeeResponse> changeStatus(
             @PathVariable UUID employeeId,
@@ -177,6 +189,25 @@ public class EmployeeController {
                 employeeService.changeStatus(
                         employeeId,
                         status
+                );
+
+        return ResponseEntity.ok(
+                EmployeeResponse.from(employee)
+        );
+    }
+
+    @PreAuthorize("hasAuthority('EMPLOYEE_UPDATE')")
+    @Operation(summary = "Assign manager")
+    @PatchMapping("/{employeeId}/manager")
+    public ResponseEntity<EmployeeResponse> assignManager(
+            @PathVariable UUID employeeId,
+            @RequestParam(required = false) UUID managerId
+    ) {
+
+        Employee employee =
+                employeeService.assignManager(
+                        employeeId,
+                        managerId
                 );
 
         return ResponseEntity.ok(
