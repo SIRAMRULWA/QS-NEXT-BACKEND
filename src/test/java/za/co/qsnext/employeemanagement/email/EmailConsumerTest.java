@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 
 import java.lang.reflect.Field;
 import java.util.Optional;
@@ -70,6 +71,18 @@ class EmailConsumerTest {
         Email email = pendingEmail();
         email.markSent();
         when(emailRepository.findById(email.getId())).thenReturn(Optional.of(email));
+
+        emailConsumer.handle(new EmailMessage(email.getId()));
+
+        verify(emailSender, never()).send(any());
+    }
+
+    @Test
+    void handle_skipsGracefully_whenAnotherConcurrentDeliveryWonTheRace() {
+        Email email = pendingEmail();
+        when(emailRepository.findById(email.getId())).thenReturn(Optional.of(email));
+        org.mockito.Mockito.doThrow(new ObjectOptimisticLockingFailureException(Email.class, email.getId()))
+                .when(emailRepository).save(email);
 
         emailConsumer.handle(new EmailMessage(email.getId()));
 

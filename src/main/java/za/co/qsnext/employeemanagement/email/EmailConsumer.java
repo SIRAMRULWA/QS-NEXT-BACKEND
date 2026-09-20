@@ -4,6 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.stereotype.Component;
 
 import za.co.qsnext.employeemanagement.rabbitmq.RabbitMqConstants;
@@ -51,15 +52,29 @@ public class EmailConsumer {
             return;
         }
 
-        email.markProcessing();
-        emailRepository.save(email);
-
         try {
+
+            email.markProcessing();
+            emailRepository.save(email);
 
             emailSender.send(email);
 
             email.markSent();
             emailRepository.save(email);
+
+        } catch (ObjectOptimisticLockingFailureException ex) {
+
+            /*
+             * Another concurrent delivery of this same message (a broker
+             * redelivery, or the outbox sweep racing the original
+             * after-commit publish) already advanced this row past the
+             * version read here - that delivery is handling it, or
+             * already has. Rethrowing would send an otherwise-healthy
+             * email through the retry/DLQ path for no reason other than
+             * losing a benign race, so this delivery simply has nothing
+             * left to do.
+             */
+            log.debug("Email {} was concurrently updated by another delivery; skipping", email.getId());
 
         } catch (EmailDeliveryException ex) {
 
