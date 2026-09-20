@@ -63,6 +63,7 @@ class NotificationIntegrationTest extends AbstractIntegrationTest {
         String email = "notif.leave.user@qsnext.co.za";
 
         UUID userId = registerAndGetUserId(username, email);
+        UUID approverId = registerAndGetUserId("notif.leave.approver", "notif.leave.approver@qsnext.co.za");
 
         Department department = departmentRepository.saveAndFlush(
                 new Department("Engineering-" + UUID.randomUUID(), "Builds the product"));
@@ -78,7 +79,7 @@ class NotificationIntegrationTest extends AbstractIntegrationTest {
                 employee.getId(), "ANNUAL",
                 LocalDate.now().plusDays(10), LocalDate.now().plusDays(12), "Vacation"));
 
-        leaveService.approve(leaveRequest.getId(), UUID.randomUUID());
+        leaveService.approve(leaveRequest.getId(), approverId);
 
         awaitUntil(
                 () -> notificationRepository.findByUserIdOrderByCreatedAtDesc(

@@ -57,11 +57,15 @@ class EmailOutboxIntegrationTest extends AbstractIntegrationTest {
 
         assertThat(passwordResetEmail).isPresent();
 
+        // A longer window than the first await: the single-threaded email
+        // consumer processes this whole suite's messages serially, and the
+        // WELCOME email counted by the first await says nothing about how
+        // far behind the PASSWORD_RESET email queued after it is.
         awaitUntil(
                 () -> emailRepository.findById(passwordResetEmail.get().getId())
                         .map(e -> e.getStatus() == EmailStatus.SENT)
                         .orElse(false),
-                Duration.ofSeconds(10)
+                Duration.ofSeconds(20)
         );
     }
 

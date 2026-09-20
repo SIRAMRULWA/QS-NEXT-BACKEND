@@ -35,8 +35,9 @@ public interface EmployeeRepository extends JpaRepository<Employee, UUID> {
     List<Employee> findByManagerId(UUID managerId);
 
     /**
-     * Directory search: matches against first name, last name or job
-     * title. A blank/null query matches everything (browse mode).
+     * Directory search: matches against first name, last name, job title
+     * or employee number. A blank/null query matches everything (browse
+     * mode).
      */
     @Query("""
             select e from Employee e
@@ -44,6 +45,7 @@ public interface EmployeeRepository extends JpaRepository<Employee, UUID> {
             or lower(e.firstName) like lower(concat('%', :query, '%'))
             or lower(e.lastName) like lower(concat('%', :query, '%'))
             or lower(e.jobTitle) like lower(concat('%', :query, '%'))
+            or lower(e.employeeNumber) like lower(concat('%', :query, '%'))
             """)
     Page<Employee> search(@Param("query") String query, Pageable pageable);
 
