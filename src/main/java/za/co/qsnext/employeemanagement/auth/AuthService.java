@@ -11,6 +11,7 @@ import org.springframework.security.authentication.LockedException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,11 +20,13 @@ import za.co.qsnext.employeemanagement.auth.dto.ChangePasswordRequest;
 import za.co.qsnext.employeemanagement.auth.dto.ForgotPasswordRequest;
 import za.co.qsnext.employeemanagement.auth.dto.LoginRequest;
 import za.co.qsnext.employeemanagement.auth.dto.LoginResponse;
+import za.co.qsnext.employeemanagement.auth.dto.MeResponse;
 import za.co.qsnext.employeemanagement.auth.dto.RefreshTokenRequest;
 import za.co.qsnext.employeemanagement.auth.dto.RegisterRequest;
 import za.co.qsnext.employeemanagement.auth.dto.ResetPasswordRequest;
 import za.co.qsnext.employeemanagement.email.EmailService;
 import za.co.qsnext.employeemanagement.email.EmailTemplate;
+import za.co.qsnext.employeemanagement.employee.EmployeeRepository;
 import za.co.qsnext.employeemanagement.exception.AccountLockedException;
 import za.co.qsnext.employeemanagement.exception.DuplicateResourceException;
 import za.co.qsnext.employeemanagement.exception.UnauthorizedException;
@@ -44,6 +47,8 @@ import java.security.SecureRandom;
 import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.util.Base64;
+import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -57,6 +62,7 @@ public class AuthService {
     private static final String ENTITY_TYPE_USER = "USER";
 
     private final UserRepository userRepository;
+    private final EmployeeRepository employeeRepository;
     private final RoleRepository roleRepository;
     private final PasswordService passwordService;
     private final JwtService jwtService;
@@ -76,6 +82,7 @@ public class AuthService {
 
     public AuthService(
             UserRepository userRepository,
+            EmployeeRepository employeeRepository,
             RoleRepository roleRepository,
             PasswordService passwordService,
             JwtService jwtService,
@@ -93,6 +100,7 @@ public class AuthService {
             @Value("${security.auth.password-reset-token-expiration-minutes}") long passwordResetTokenExpirationMinutes
     ) {
         this.userRepository = userRepository;
+        this.employeeRepository = employeeRepository;
         this.roleRepository = roleRepository;
         this.passwordService = passwordService;
         this.jwtService = jwtService;
@@ -425,6 +433,46 @@ public class AuthService {
                 ENTITY_TYPE_USER,
                 user.getId(),
                 AuditService.RESULT_SUCCESS
+        );
+    }
+
+    /**
+     * The JWT itself carries no roles or permissions - authorization is
+     * resolved server-side per request from the cached principal, not the
+     * token - so this is the only way a client can learn the caller's own
+     * roles/authorities for UI gating (nav visibility, button enablement).
+     * {@code authorities} always reflects the request's actual resolved
+     * grants, whichever principal-building path produced it.
+     */
+    public MeResponse getCurrentUser(UUID userId, Collection<? extends GrantedAuthority> grantedAuthorities) {
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new UnauthorizedException("Authentication required"));
+
+        UUID employeeId = employeeRepository.findByUserId(userId)
+                .map(employee -> employee.getId())
+                .orElse(null);
+
+        List<String> roles = grantedAuthorities.stream()
+                .map(GrantedAuthority::getAuthority)
+                .filter(authority -> authority.startsWith("ROLE_"))
+                .map(authority -> authority.substring("ROLE_".length()))
+                .sorted()
+                .toList();
+
+        List<String> authorities = grantedAuthorities.stream()
+                .map(GrantedAuthority::getAuthority)
+                .filter(authority -> !authority.startsWith("ROLE_"))
+                .sorted()
+                .toList();
+
+        return new MeResponse(
+                user.getId(),
+                user.getUsername(),
+                user.getEmail(),
+                employeeId,
+                roles,
+                authorities
         );
     }
 

@@ -79,13 +79,10 @@ management:
           - info
           - metrics
           - prometheus
-      health:
-        show-details: always
-        probes:
-          enabled: true
 
   endpoint:
     health:
+      show-details: always
       probes:
         enabled: true
       # The default readiness group only reflects the application's own
@@ -135,6 +132,14 @@ security:
   # audit trail. Set this to the load balancer/ingress address(es) only
   # if this deployment genuinely sits behind one.
   trusted-proxies: ${SECURITY_TRUSTED_PROXIES:}
+
+  # Comma-separated origins (scheme+host+port) the browser-based frontend
+  # is served from - e.g. https://app.qsnext.co.za. Left empty (the safe
+  # default), no cross-origin browser request is allowed at all. Only
+  # exact origins are matched, never a wildcard, since CORS is combined
+  # with allow-credentials for cookie/Authorization-header requests.
+  cors:
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:}
 
 email:
   from-address: ${EMAIL_FROM_ADDRESS:no-reply@qsnext.co.za}
