@@ -2,6 +2,8 @@ package za.co.qsnext.employeemanagement.security;
 
 import io.jsonwebtoken.JwtException;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
@@ -20,6 +22,8 @@ import java.util.UUID;
  */
 @Service
 public class TokenRevocationService {
+
+    private static final Logger log = LoggerFactory.getLogger(TokenRevocationService.class);
 
     private static final String KEY_PREFIX = "revoked:token:";
 

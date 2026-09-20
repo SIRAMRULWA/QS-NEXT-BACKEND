@@ -48,6 +48,7 @@ class RateLimitFilterTest {
         filter = new RateLimitFilter(
                 redisTemplate,
                 objectMapper,
+                new ClientIpResolver(""),
                 MAX_REQUESTS,
                 60L
         );

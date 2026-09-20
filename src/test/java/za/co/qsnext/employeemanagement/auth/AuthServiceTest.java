@@ -23,6 +23,7 @@ import za.co.qsnext.employeemanagement.email.EmailService;
 import za.co.qsnext.employeemanagement.email.EmailTemplate;
 import za.co.qsnext.employeemanagement.exception.AccountLockedException;
 import za.co.qsnext.employeemanagement.exception.UnauthorizedException;
+import za.co.qsnext.employeemanagement.security.ClientIpResolver;
 import za.co.qsnext.employeemanagement.security.CustomUserDetails;
 import za.co.qsnext.employeemanagement.security.JwtService;
 import za.co.qsnext.employeemanagement.security.TokenRevocationService;
@@ -104,6 +105,7 @@ class AuthServiceTest {
                 emailService,
                 auditService,
                 tokenRevocationService,
+                new ClientIpResolver(""),
                 MAX_FAILED_LOGIN_ATTEMPTS,
                 15,
                 30

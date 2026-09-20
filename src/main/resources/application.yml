@@ -117,6 +117,17 @@ security:
     max-requests: ${RATE_LIMIT_MAX_REQUESTS:10}
     window-seconds: ${RATE_LIMIT_WINDOW_SECONDS:60}
 
+  # Comma-separated IPs/CIDRs of reverse proxies/load balancers this app
+  # sits behind, if any. X-Forwarded-For is only trusted for rate-limiting
+  # and audit logging when the request's own TCP peer matches one of
+  # these - left empty (the safe default), every request is attributed to
+  # its direct peer address and X-Forwarded-For is ignored entirely,
+  # since trusting it unconditionally lets any external caller spoof a
+  # fresh rate-limit bucket per request and forge the "client IP" in the
+  # audit trail. Set this to the load balancer/ingress address(es) only
+  # if this deployment genuinely sits behind one.
+  trusted-proxies: ${SECURITY_TRUSTED_PROXIES:}
+
 email:
   from-address: ${EMAIL_FROM_ADDRESS:no-reply@qsnext.co.za}
 

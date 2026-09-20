@@ -32,7 +32,10 @@ public class AttendanceController {
         this.attendanceService = attendanceService;
     }
 
-    @PreAuthorize("hasAuthority('ATTENDANCE_READ')")
+    @PreAuthorize(
+            "hasAuthority('ATTENDANCE_READ') and " +
+                    "@attendanceAuthorizationService.canReadRecord(#attendanceId, authentication)"
+    )
     @Operation(summary = "Get by id")
     @GetMapping("/{attendanceId}")
     public ResponseEntity<AttendanceResponse> getById(
@@ -46,7 +49,10 @@ public class AttendanceController {
         );
     }
 
-    @PreAuthorize("hasAuthority('ATTENDANCE_READ')")
+    @PreAuthorize(
+            "hasAuthority('ATTENDANCE_READ') and " +
+                    "@employeeAuthorizationService.canRead(#employeeId, authentication)"
+    )
     @Operation(summary = "Get by employee")
     @GetMapping("/employee/{employeeId}")
     public ResponseEntity<Page<AttendanceResponse>> getByEmployee(
@@ -164,7 +170,9 @@ public class AttendanceController {
         );
     }
 
-    @PreAuthorize("hasAuthority('ATTENDANCE_READ')")
+    @PreAuthorize(
+            "hasAuthority('ATTENDANCE_READ') and @employeeAuthorizationService.canManage(authentication)"
+    )
     @Operation(summary = "Get by date")
     @GetMapping("/date/{date}")
     public ResponseEntity<Page<AttendanceResponse>> getByDate(

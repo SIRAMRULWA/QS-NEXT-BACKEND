@@ -33,9 +33,7 @@ public class EmployeeAuthorizationService {
             return false;
         }
 
-        if (hasAuthority(authentication, ROLE_ADMIN)
-                || hasAuthority(authentication, ROLE_HR_MANAGER)
-                || hasAuthority(authentication, ROLE_HR_OFFICER)) {
+        if (canManage(authentication)) {
             return true;
         }
 
@@ -54,6 +52,26 @@ public class EmployeeAuthorizationService {
                 .map(Employee::getUserId)
                 .map(currentUserId::equals)
                 .orElse(false);
+    }
+
+    /**
+     * True for a caller in an HR/admin role that isn't scoped to their own
+     * employee record - i.e. someone who's supposed to see everyone's data,
+     * not just their own. Used both as the elevated-access bypass in
+     * {@link #canRead} and, on its own, to gate company-wide list endpoints
+     * (e.g. "every leave request with status X") that have no single
+     * employeeId to check ownership of.
+     */
+    public boolean canManage(Authentication authentication) {
+
+        if (authentication == null
+                || !authentication.isAuthenticated()) {
+            return false;
+        }
+
+        return hasAuthority(authentication, ROLE_ADMIN)
+                || hasAuthority(authentication, ROLE_HR_MANAGER)
+                || hasAuthority(authentication, ROLE_HR_OFFICER);
     }
 
     private boolean hasAuthority(

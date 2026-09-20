@@ -13,6 +13,7 @@ import org.springframework.data.domain.Pageable;
 
 import za.co.qsnext.employeemanagement.audit.dto.AuditLogResponse;
 import za.co.qsnext.employeemanagement.observability.BusinessMetrics;
+import za.co.qsnext.employeemanagement.security.ClientIpResolver;
 
 import java.util.List;
 import java.util.UUID;
@@ -33,7 +34,7 @@ class AuditServiceTest {
 
     @BeforeEach
     void setUp() {
-        auditService = new AuditService(auditLogRepository, businessMetrics);
+        auditService = new AuditService(auditLogRepository, businessMetrics, new ClientIpResolver(""));
     }
 
     @Test
