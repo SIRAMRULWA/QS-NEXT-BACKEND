@@ -1,6 +1,8 @@
 package za.co.qsnext.employeemanagement.notification;
 
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
 
@@ -44,6 +46,21 @@ public class NotificationConsumer {
         this.pushNotificationSender = pushNotificationSender;
     }
 
+    /**
+     * REQUIRES_NEW is deliberate, not decorative: by the time an
+     * AFTER_COMMIT listener runs, the triggering transaction has already
+     * committed at the JDBC level but Spring hasn't finished unbinding its
+     * synchronization state from this thread yet. Without REQUIRES_NEW,
+     * notificationRepository.save() below can be talked into joining that
+     * already-completed transaction instead of opening a genuinely new
+     * one - the insert executes with no error, but nothing ever commits
+     * it, so it silently vanishes once the stale connection is released
+     * back to the pool. EmailOutboxEventListener sidesteps the same trap
+     * by being @Async instead (a fresh thread has no synchronization
+     * state to accidentally join); this listener does real DB work
+     * in-line, so it needs REQUIRES_NEW to get the same guarantee.
+     */
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void onNotification(NotificationEvent event) {
 

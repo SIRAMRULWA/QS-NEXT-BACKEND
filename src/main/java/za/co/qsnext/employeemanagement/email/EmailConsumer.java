@@ -82,7 +82,15 @@ public class EmailConsumer {
                     email.getId(), email.getAttemptCount(), ex.getMessage());
 
             email.markFailed(ex.getMessage());
-            emailRepository.save(email);
+
+            try {
+                emailRepository.save(email);
+            } catch (ObjectOptimisticLockingFailureException lockEx) {
+                // Same benign race as above, just reached from the failure
+                // path instead of the success path - another concurrent
+                // delivery already recorded its own outcome for this row.
+                log.debug("Email {} was concurrently updated while recording failure; skipping", email.getId());
+            }
 
             throw ex;
         }
