@@ -194,12 +194,11 @@ public class InterviewService {
 
     public List<InterviewFeedbackResponse> getFeedbackForApplication(UUID applicationId) {
 
-        List<Interview> interviews = interviewRepository.findByApplicationId(applicationId);
+        List<UUID> interviewIds = interviewRepository.findByApplicationId(applicationId).stream()
+                .map(Interview::getId)
+                .toList();
 
-        return interviews.stream()
-                .map(interview -> feedbackRepository.findByInterviewId(interview.getId()))
-                .filter(java.util.Optional::isPresent)
-                .map(java.util.Optional::get)
+        return feedbackRepository.findByInterviewIdIn(interviewIds).stream()
                 .map(InterviewFeedbackResponse::from)
                 .toList();
     }

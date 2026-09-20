@@ -29,6 +29,18 @@ public interface TimesheetRepository
             String status
     );
 
+    /**
+     * Batch form of {@link #findByEmployeeIdAndPeriodStartAndPeriodEndAndStatus}
+     * for Payroll's per-run overtime lookup, which otherwise issues one query
+     * per active employee for the same pay period and status.
+     */
+    List<Timesheet> findByEmployeeIdInAndPeriodStartAndPeriodEndAndStatus(
+            List<UUID> employeeIds,
+            LocalDate periodStart,
+            LocalDate periodEnd,
+            String status
+    );
+
     Page<Timesheet> findByStatus(
             String status,
             Pageable pageable

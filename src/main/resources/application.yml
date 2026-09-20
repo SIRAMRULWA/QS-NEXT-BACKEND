@@ -88,6 +88,14 @@ management:
     health:
       probes:
         enabled: true
+      # The default readiness group only reflects the application's own
+      # ReadinessState signal - an orchestrator polling it would see
+      # "ready" even with Postgres/Redis/RabbitMQ unreachable. Add those
+      # dependency checks explicitly so a broken dependency actually
+      # takes the pod out of the load balancer.
+      group:
+        readiness:
+          include: readinessState,db,redis,rabbit
 
   metrics:
     tags:

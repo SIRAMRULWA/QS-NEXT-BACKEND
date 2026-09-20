@@ -129,12 +129,24 @@ public class AiController {
             @RequestParam(defaultValue = "20") int size
     ) {
         UUID userId = ((CustomUserDetails) authentication.getPrincipal()).getUserId();
-        Pageable pageable = PageRequest.of(page, size);
-        return ResponseEntity.ok(aiService.getMySuggestions(userId, pageable));
+        return ResponseEntity.ok(aiService.getMySuggestions(userId, createPageable(page, size)));
     }
 
     private boolean canManage(Authentication authentication) {
         return authentication.getAuthorities().stream()
                 .anyMatch(authority -> HR_TOOLS_AUTHORITY.equals(authority.getAuthority()));
+    }
+
+    private Pageable createPageable(int page, int size) {
+
+        if (page < 0) {
+            page = 0;
+        }
+
+        if (size < 1 || size > 100) {
+            size = 20;
+        }
+
+        return PageRequest.of(page, size);
     }
 }

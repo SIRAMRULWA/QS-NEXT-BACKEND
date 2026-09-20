@@ -4,6 +4,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
 
 import za.co.qsnext.employeemanagement.ai.AiProviderException;
+import za.co.qsnext.employeemanagement.document.DocumentStorageException;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -221,6 +222,19 @@ public class GlobalExceptionHandler {
                 HttpStatus.SERVICE_UNAVAILABLE,
                 "AI_PROVIDER_UNAVAILABLE",
                 "The AI provider is temporarily unavailable. Please try again later.",
+                request.getRequestURI()
+        );
+    }
+
+    @ExceptionHandler(DocumentStorageException.class)
+    public ResponseEntity<ErrorResponse> handleDocumentStorageFailure(
+            DocumentStorageException exception,
+            HttpServletRequest request
+    ) {
+        return buildResponse(
+                HttpStatus.SERVICE_UNAVAILABLE,
+                "DOCUMENT_STORAGE_UNAVAILABLE",
+                "Document storage is temporarily unavailable. Please try again later.",
                 request.getRequestURI()
         );
     }

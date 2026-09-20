@@ -116,7 +116,7 @@ public class ComplianceController {
         return ResponseEntity.ok(complianceService.getExpiringRecords(withinDays));
     }
 
-    @PreAuthorize("hasAuthority('COMPLIANCE_MANAGE')")
+    @PreAuthorize("hasAnyAuthority('COMPLIANCE_MANAGE', 'COMPLIANCE_READ')")
     @Operation(summary = "Get requirement summary")
     @GetMapping("/requirements/{requirementId}/summary")
     public ResponseEntity<ComplianceRequirementSummaryResponse> getRequirementSummary(

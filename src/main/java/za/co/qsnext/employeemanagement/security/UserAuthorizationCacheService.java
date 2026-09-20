@@ -1,6 +1,5 @@
 package za.co.qsnext.employeemanagement.security;
 
-import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
@@ -36,11 +35,6 @@ public class UserAuthorizationCacheService {
     public Optional<CachedUserPrincipal> findPrincipal(String username) {
         return userRepository.findByUsername(username)
                 .map(UserAuthorizationCacheService::toPrincipal);
-    }
-
-    @CacheEvict(cacheNames = RedisCacheNames.USER_PRINCIPALS, key = "#username")
-    public void evict(String username) {
-        // Cache entry removed by Spring's caching aspect.
     }
 
     private static CachedUserPrincipal toPrincipal(User user) {
