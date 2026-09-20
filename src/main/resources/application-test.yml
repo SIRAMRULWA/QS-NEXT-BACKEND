@@ -60,15 +60,29 @@ email:
 
   outbox:
     sweep-interval-ms: 1000
-    # A 1-second threshold sounded appealingly fast, but it actively broke
-    # things: the sweep would republish an email that was still legitimately
-    # mid-flight through its normal after-commit publish (not lost at all),
-    # so the same row got consumed twice - and Email's @Version column then
-    # threw ObjectOptimisticLockingFailureException on the second save,
-    # which is not an EmailDeliveryException so EmailConsumer never catches
-    # it, sending an otherwise-healthy email to the DLQ. 30s is still far
-    # below production's 120s default and imperceptible next to this
-    # suite's Testcontainers startup time, but gives the real pipeline
-    # enough room that the sweep only ever fires for genuinely stuck mail.
-    stuck-threshold-seconds: 30
+    # This value has swung twice already, for two different reasons, and
+    # both still hold - which is why it now lands somewhere in between
+    # instead of at either extreme:
+    #
+    # - 1 second (the original) was too aggressive: the sweep would
+    #   republish an email that was still legitimately mid-flight through
+    #   its normal after-commit publish (not lost at all), so the same row
+    #   got consumed twice.
+    # - 30 seconds (the first fix) went too far the other way:
+    #   EmailOutboxIntegrationTest waits at most 20s for its own email, so
+    #   if that email's initial async publish is ever missed or delayed,
+    #   the sweep's own safety net wouldn't even attempt a rescue until
+    #   after the test had already given up - confirmed by a run whose
+    #   log showed zero consumer or sweep activity for this email's entire
+    #   20-second window.
+    #
+    # 30s stopped being necessary for the original reason once EmailConsumer
+    # itself became tolerant of a losing race against a duplicate delivery
+    # (ObjectOptimisticLockingFailureException is now caught and treated as
+    # benign, not fatal) - so the sweep no longer needs to stay out of the
+    # way of an in-flight publish to avoid causing damage; it only needs to
+    # not fire while a normal publish is still genuinely in flight. A few
+    # seconds is enough margin for that without leaving a genuinely missed
+    # publish stuck past this suite's own wait budgets.
+    stuck-threshold-seconds: 3
     sweep-batch-size: 50
