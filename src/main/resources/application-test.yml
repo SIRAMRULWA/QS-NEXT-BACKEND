@@ -25,6 +25,15 @@ security:
     access-token-expiration: 900000
     refresh-token-expiration: 604800000
 
+  # The production default (10 requests/60s) is meant to gate a single real
+  # client. Every *IntegrationTest shares one Spring context, one Redis
+  # instance and one MockMvc-resolved remote address, so dozens of test
+  # classes registering users in the same run would otherwise all trip the
+  # same per-IP counter well before any one class's own assertions run.
+  rate-limit:
+    max-requests: 100000
+    window-seconds: 60
+
 # Fast retry/backoff and a short outbox-stuck threshold so tests that
 # exercise the retry -> DLQ path and the outbox sweep don't have to wait
 # out production-sized delays.

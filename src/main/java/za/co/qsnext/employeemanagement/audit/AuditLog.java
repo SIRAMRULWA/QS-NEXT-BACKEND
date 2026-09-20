@@ -6,6 +6,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
+import org.hibernate.annotations.ColumnTransformer;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.UuidGenerator;
 import org.hibernate.type.SqlTypes;
@@ -43,6 +44,7 @@ public class AuditLog {
     @Column(name = "new_values", columnDefinition = "jsonb")
     private String newValues;
 
+    @ColumnTransformer(write = "?::inet")
     @Column(name = "ip_address", columnDefinition = "inet")
     private String ipAddress;
 
