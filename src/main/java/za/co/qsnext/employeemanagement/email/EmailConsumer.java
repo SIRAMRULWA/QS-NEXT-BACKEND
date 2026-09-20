@@ -6,6 +6,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
 import za.co.qsnext.employeemanagement.rabbitmq.RabbitMqConstants;
 
@@ -32,6 +34,46 @@ public class EmailConsumer {
         this.emailSender = emailSender;
     }
 
+    /**
+     * REQUIRES_NEW, not decorative: this listener's own save() calls each
+     * open their own transaction via the repository proxy's default
+     * REQUIRED propagation, which is normally fine on a thread with no
+     * transaction already bound to it - but RabbitMQ listener container
+     * threads are pooled and reused across many message deliveries over
+     * the container's lifetime, and this diagnosis (a diagnostic build
+     * that unconditionally logged the outbox sweep's own tick confirmed
+     * it runs every second and never once finds this email PENDING - it
+     * leaves PENDING almost immediately and simply never reaches SENT,
+     * with no exception logged anywhere) matches the same failure shape
+     * already found and fixed in NotificationConsumer: a REQUIRED-
+     * propagation write on a reused thread can silently join leftover
+     * transaction synchronization state from that thread's own prior
+     * work instead of opening a genuinely new transaction, so the write
+     * executes but is never actually committed by anything. The
+     * exhausted-retries path this queue's own deliveryFailure test
+     * deliberately drives (RejectAndDontRequeueRecoverer, nested
+     * ListenerExecutionFailedExceptions) runs on this exact same pooled
+     * thread immediately beforehand in every observed run - exactly the
+     * kind of abnormal, exception-heavy control flow most likely to
+     * leave that state behind. REQUIRES_NEW removes the ambiguity: every
+     * delivery gets a transaction that is unquestionably its own.
+     */
+    /*
+     * noRollbackFor is required, not optional: the catch block below
+     * deliberately records markFailed() and then rethrows so the
+     * listener container's retry advice can see the exception and act
+     * on it (see class javadoc) - but @Transactional's default rule
+     * rolls back on any unchecked exception leaving the method, which
+     * would silently undo that same markFailed() write. Without this,
+     * EmailConsumerTest's and EmailOutboxIntegrationTest's own
+     * assertions that a failed delivery is actually recorded as FAILED
+     * (with an attempt count) before the retry/DLQ path continues would
+     * stop being true.
+     */
+    @Transactional(
+            propagation = Propagation.REQUIRES_NEW,
+            noRollbackFor = EmailDeliveryException.class
+    )
     @RabbitListener(queues = RabbitMqConstants.EMAIL_QUEUE)
     public void handle(EmailMessage message) {
 

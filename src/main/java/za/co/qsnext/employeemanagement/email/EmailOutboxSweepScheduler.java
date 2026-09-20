@@ -60,16 +60,6 @@ public class EmailOutboxSweepScheduler {
     @Scheduled(fixedDelayString = "${email.outbox.sweep-interval-ms}")
     public void sweep() {
 
-        // TEMPORARY: unconditional per-tick trace to settle, empirically,
-        // whether @Scheduled is invoking this method at all in the real
-        // integration-test context - every attempt to explain the outbox
-        // sweep's complete silence (raising the stuck threshold, wrapping
-        // the body in try/catch) has produced zero change in observable
-        // behavior, which is only consistent with the method never being
-        // called in the first place. To be removed once that's confirmed
-        // one way or the other.
-        log.info("Outbox sweep tick");
-
         try {
 
             OffsetDateTime threshold = OffsetDateTime.now().minus(stuckThreshold);
