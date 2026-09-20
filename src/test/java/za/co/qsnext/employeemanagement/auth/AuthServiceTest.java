@@ -11,6 +11,8 @@ import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.LockedException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 
 import za.co.qsnext.employeemanagement.audit.AuditService;
 import za.co.qsnext.employeemanagement.auth.dto.ChangePasswordRequest;
@@ -21,6 +23,8 @@ import za.co.qsnext.employeemanagement.auth.dto.RefreshTokenRequest;
 import za.co.qsnext.employeemanagement.auth.dto.ResetPasswordRequest;
 import za.co.qsnext.employeemanagement.email.EmailService;
 import za.co.qsnext.employeemanagement.email.EmailTemplate;
+import za.co.qsnext.employeemanagement.employee.Employee;
+import za.co.qsnext.employeemanagement.employee.EmployeeRepository;
 import za.co.qsnext.employeemanagement.exception.AccountLockedException;
 import za.co.qsnext.employeemanagement.exception.UnauthorizedException;
 import za.co.qsnext.employeemanagement.security.ClientIpResolver;
@@ -33,7 +37,9 @@ import za.co.qsnext.employeemanagement.user.UserRepository;
 import za.co.qsnext.employeemanagement.user.UserService;
 
 import java.time.Duration;
+import java.time.LocalDate;
 import java.time.OffsetDateTime;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -65,6 +71,8 @@ class AuthServiceTest {
     @Mock
     private UserRepository userRepository;
     @Mock
+    private EmployeeRepository employeeRepository;
+    @Mock
     private RoleRepository roleRepository;
     @Mock
     private PasswordService passwordService;
@@ -94,6 +102,7 @@ class AuthServiceTest {
 
         authService = new AuthService(
                 userRepository,
+                employeeRepository,
                 roleRepository,
                 passwordService,
                 jwtService,
@@ -351,5 +360,55 @@ class AuthServiceTest {
         assertThatThrownBy(() ->
                 authService.resetPassword(new ResetPasswordRequest("some-token", "N3wPass!word")))
                 .isInstanceOf(UnauthorizedException.class);
+    }
+
+    @Test
+    void getCurrentUser_splitsRoleAndPermissionAuthoritiesAndResolvesLinkedEmployeeId() {
+        User user = userWithId();
+        UUID employeeId = UUID.randomUUID();
+        Employee employee = new Employee(
+                user.getId(), UUID.randomUUID(), "EMP-001", "Jane", "Doe",
+                "0123456789", "Engineer", LocalDate.of(2020, 1, 1));
+        setEmployeeId(employee, employeeId);
+
+        when(userRepository.findById(user.getId())).thenReturn(Optional.of(user));
+        when(employeeRepository.findByUserId(user.getId())).thenReturn(Optional.of(employee));
+
+        List<GrantedAuthority> grantedAuthorities = List.of(
+                new SimpleGrantedAuthority("ROLE_HR_MANAGER"),
+                new SimpleGrantedAuthority("EMPLOYEE_READ"),
+                new SimpleGrantedAuthority("LEAVE_CREATE")
+        );
+
+        var response = authService.getCurrentUser(user.getId(), grantedAuthorities);
+
+        assertThat(response.userId()).isEqualTo(user.getId());
+        assertThat(response.username()).isEqualTo(user.getUsername());
+        assertThat(response.email()).isEqualTo(user.getEmail());
+        assertThat(response.employeeId()).isEqualTo(employeeId);
+        assertThat(response.roles()).containsExactly("HR_MANAGER");
+        assertThat(response.authorities()).containsExactly("EMPLOYEE_READ", "LEAVE_CREATE");
+    }
+
+    @Test
+    void getCurrentUser_returnsNullEmployeeId_whenNoEmployeeIsLinked() {
+        User user = userWithId();
+
+        when(userRepository.findById(user.getId())).thenReturn(Optional.of(user));
+        when(employeeRepository.findByUserId(user.getId())).thenReturn(Optional.empty());
+
+        var response = authService.getCurrentUser(user.getId(), List.of());
+
+        assertThat(response.employeeId()).isNull();
+    }
+
+    private static void setEmployeeId(Employee employee, UUID id) {
+        try {
+            var field = Employee.class.getDeclaredField("id");
+            field.setAccessible(true);
+            field.set(employee, id);
+        } catch (ReflectiveOperationException e) {
+            throw new IllegalStateException(e);
+        }
     }
 }

@@ -81,6 +81,23 @@ public class AuthController {
         return ResponseEntity.noContent().build();
     }
 
+    @Operation(summary = "Get current user")
+    @GetMapping("/me")
+    public ResponseEntity<MeResponse> me(
+            Authentication authentication
+    ) {
+
+        CustomUserDetails userDetails =
+                (CustomUserDetails) authentication.getPrincipal();
+
+        return ResponseEntity.ok(
+                authService.getCurrentUser(
+                        userDetails.getUserId(),
+                        authentication.getAuthorities()
+                )
+        );
+    }
+
     @Operation(summary = "Change password")
     @PostMapping("/change-password")
     public ResponseEntity<Void> changePassword(
