@@ -58,7 +58,9 @@ class IdorProtectionIntegrationTest extends AbstractIntegrationTest {
         UUID ownerEmployeeId = createEmployeeProfile(adminToken, ownerUserId, departmentId, "EMP-IDOR-L01");
         createEmployeeProfile(adminToken, intruderUserId, departmentId, "EMP-IDOR-L02");
 
-        UUID leaveRequestId = createLeaveRequest(ownerToken, ownerEmployeeId);
+        LocalDate leaveStart = LocalDate.now().plusDays(10);
+        createLeaveBalance(adminToken, ownerEmployeeId, "ANNUAL", leaveStart.getYear());
+        UUID leaveRequestId = createLeaveRequest(ownerToken, ownerEmployeeId, leaveStart);
 
         mockMvc.perform(get("/api/v1/leave/{id}", leaveRequestId)
                         .header("Authorization", "Bearer " + intruderToken))
@@ -195,7 +197,17 @@ class IdorProtectionIntegrationTest extends AbstractIntegrationTest {
         return UUID.fromString(body.get("id").asText());
     }
 
-    private UUID createLeaveRequest(String employeeToken, UUID employeeId) throws Exception {
+    private void createLeaveBalance(String adminToken, UUID employeeId, String leaveType, int leaveYear) throws Exception {
+        mockMvc.perform(post("/api/v1/leave/balances")
+                        .header("Authorization", "Bearer " + adminToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"employeeId":"%s","leaveType":"%s","leaveYear":%d,"allocatedDays":20}
+                                """.formatted(employeeId, leaveType, leaveYear)))
+                .andExpect(status().isCreated());
+    }
+
+    private UUID createLeaveRequest(String employeeToken, UUID employeeId, LocalDate startDate) throws Exception {
         MvcResult result = mockMvc.perform(post("/api/v1/leave")
                         .header("Authorization", "Bearer " + employeeToken)
                         .contentType(MediaType.APPLICATION_JSON)
@@ -203,8 +215,8 @@ class IdorProtectionIntegrationTest extends AbstractIntegrationTest {
                                 {"employeeId":"%s","leaveType":"ANNUAL","startDate":"%s","endDate":"%s","reason":"IDOR test"}
                                 """.formatted(
                                 employeeId,
-                                LocalDate.now().plusDays(10),
-                                LocalDate.now().plusDays(12))))
+                                startDate,
+                                startDate.plusDays(2))))
                 .andExpect(status().isCreated())
                 .andReturn();
 
