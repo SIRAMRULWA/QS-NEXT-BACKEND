@@ -8,4 +8,6 @@ import java.util.UUID;
 public interface OnboardingTemplateTaskRepository extends JpaRepository<OnboardingTemplateTask, UUID> {
 
     List<OnboardingTemplateTask> findByTemplateIdOrderBySortOrderAsc(UUID templateId);
+
+    List<OnboardingTemplateTask> findByTemplateIdInOrderBySortOrderAsc(List<UUID> templateIds);
 }

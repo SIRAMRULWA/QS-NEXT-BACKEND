@@ -20,8 +20,8 @@ import za.co.qsnext.employeemanagement.payroll.dto.PayPeriodResponse;
 import za.co.qsnext.employeemanagement.payroll.dto.PayrollRunEntryResponse;
 import za.co.qsnext.employeemanagement.payroll.dto.PayrollRunResponse;
 import za.co.qsnext.employeemanagement.timesheet.Timesheet;
-import za.co.qsnext.employeemanagement.timesheet.TimesheetEntry;
 import za.co.qsnext.employeemanagement.timesheet.TimesheetEntryRepository;
+import za.co.qsnext.employeemanagement.timesheet.TimesheetHoursSummary;
 import za.co.qsnext.employeemanagement.timesheet.TimesheetRepository;
 
 import java.lang.reflect.Field;
@@ -36,6 +36,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -207,10 +208,6 @@ class PayrollRunServiceTest {
         Timesheet timesheet = new Timesheet(employeeId, period.getStartDate(), period.getEndDate());
         setId(timesheet, timesheetId);
 
-        TimesheetEntry entry1 = new TimesheetEntry(timesheetId, period.getStartDate(), BigDecimal.valueOf(100), null);
-        TimesheetEntry entry2 = new TimesheetEntry(
-                timesheetId, period.getStartDate().plusDays(1), BigDecimal.valueOf(70), null);
-
         when(payPeriodRepository.findById(periodId)).thenReturn(Optional.of(period));
         when(payrollRunRepository.findByPayPeriodId(periodId)).thenReturn(Optional.empty());
         when(payrollRunRepository.save(any())).thenAnswer(invocation -> {
@@ -225,11 +222,16 @@ class PayrollRunServiceTest {
             setId(e, UUID.randomUUID());
             return e;
         });
-        when(timesheetRepository.findByEmployeeIdAndPeriodStartAndPeriodEndAndStatus(
-                employeeId, period.getStartDate(), period.getEndDate(), "APPROVED"))
-                .thenReturn(Optional.of(timesheet));
-        when(timesheetEntryRepository.findByTimesheetIdOrderByWorkDateAsc(timesheetId))
-                .thenReturn(List.of(entry1, entry2));
+        when(timesheetRepository.findByEmployeeIdInAndPeriodStartAndPeriodEndAndStatus(
+                List.of(employeeId), period.getStartDate(), period.getEndDate(), "APPROVED"))
+                .thenReturn(List.of(timesheet));
+
+        TimesheetHoursSummary hoursSummary = mock(TimesheetHoursSummary.class);
+        when(hoursSummary.getTimesheetId()).thenReturn(timesheetId);
+        when(hoursSummary.getTotalHours()).thenReturn(BigDecimal.valueOf(170));
+
+        when(timesheetEntryRepository.sumHoursGroupedByTimesheetId(List.of(timesheetId)))
+                .thenReturn(List.of(hoursSummary));
 
         List<PayrollLineItem> savedLineItems = new ArrayList<>();
         when(payrollLineItemRepository.save(any())).thenAnswer(invocation -> {

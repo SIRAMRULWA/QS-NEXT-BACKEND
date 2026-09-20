@@ -5,6 +5,10 @@ import io.swagger.v3.oas.annotations.Operation;
 
 import jakarta.validation.Valid;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -44,8 +48,11 @@ public class PerformanceController {
     @PreAuthorize("hasAnyAuthority('PERFORMANCE_MANAGE', 'PERFORMANCE_READ')")
     @Operation(summary = "Get all cycles")
     @GetMapping("/cycles")
-    public ResponseEntity<List<PerformanceCycleResponse>> getAllCycles() {
-        return ResponseEntity.ok(performanceService.getAllCycles());
+    public ResponseEntity<Page<PerformanceCycleResponse>> getAllCycles(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size
+    ) {
+        return ResponseEntity.ok(performanceService.getAllCycles(createPageable(page, size)));
     }
 
     @PreAuthorize("hasAuthority('PERFORMANCE_MANAGE')")
@@ -203,5 +210,18 @@ public class PerformanceController {
     private boolean canManage(Authentication authentication) {
         return authentication.getAuthorities().stream()
                 .anyMatch(authority -> MANAGE_AUTHORITY.equals(authority.getAuthority()));
+    }
+
+    private Pageable createPageable(int page, int size) {
+
+        if (page < 0) {
+            page = 0;
+        }
+
+        if (size < 1 || size > 100) {
+            size = 20;
+        }
+
+        return PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "startDate"));
     }
 }

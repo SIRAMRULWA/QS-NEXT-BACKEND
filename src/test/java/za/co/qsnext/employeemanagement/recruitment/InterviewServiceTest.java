@@ -207,8 +207,8 @@ class InterviewServiceTest {
         setId(feedback1, UUID.randomUUID());
 
         when(interviewRepository.findByApplicationId(applicationId)).thenReturn(List.of(interview1, interview2));
-        when(feedbackRepository.findByInterviewId(interviewId1)).thenReturn(Optional.of(feedback1));
-        when(feedbackRepository.findByInterviewId(interviewId2)).thenReturn(Optional.empty());
+        when(feedbackRepository.findByInterviewIdIn(List.of(interviewId1, interviewId2)))
+                .thenReturn(List.of(feedback1));
 
         List<InterviewFeedbackResponse> results = interviewService.getFeedbackForApplication(applicationId);
 

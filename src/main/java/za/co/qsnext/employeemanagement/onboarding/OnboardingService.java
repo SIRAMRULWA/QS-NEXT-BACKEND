@@ -18,8 +18,11 @@ import za.co.qsnext.employeemanagement.onboarding.dto.OnboardingTemplateTaskItem
 import za.co.qsnext.employeemanagement.onboarding.dto.OnboardingTemplateTaskResponse;
 import za.co.qsnext.employeemanagement.onboarding.dto.OnboardingWorkflowResponse;
 
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 @Transactional(readOnly = true)
@@ -73,10 +76,17 @@ public class OnboardingService {
     }
 
     public List<OnboardingTemplateResponse> getAllTemplates() {
-        return templateRepository.findAll().stream()
+
+        List<OnboardingTemplate> templates = templateRepository.findAll();
+
+        Map<UUID, List<OnboardingTemplateTask>> tasksByTemplateId = templateTaskRepository
+                .findByTemplateIdInOrderBySortOrderAsc(templates.stream().map(OnboardingTemplate::getId).toList())
+                .stream()
+                .collect(Collectors.groupingBy(OnboardingTemplateTask::getTemplateId, LinkedHashMap::new, Collectors.toList()));
+
+        return templates.stream()
                 .map(template -> toTemplateResponse(
-                        template,
-                        templateTaskRepository.findByTemplateIdOrderBySortOrderAsc(template.getId())
+                        template, tasksByTemplateId.getOrDefault(template.getId(), List.of())
                 ))
                 .toList();
     }

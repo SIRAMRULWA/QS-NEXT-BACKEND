@@ -1,5 +1,7 @@
 package za.co.qsnext.employeemanagement.payroll;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -19,12 +21,13 @@ import za.co.qsnext.employeemanagement.payroll.dto.PayrollRunEntryResponse;
 import za.co.qsnext.employeemanagement.payroll.dto.PayrollRunResponse;
 import za.co.qsnext.employeemanagement.payroll.dto.PayslipResponse;
 import za.co.qsnext.employeemanagement.timesheet.Timesheet;
-import za.co.qsnext.employeemanagement.timesheet.TimesheetEntry;
 import za.co.qsnext.employeemanagement.timesheet.TimesheetEntryRepository;
+import za.co.qsnext.employeemanagement.timesheet.TimesheetHoursSummary;
 import za.co.qsnext.employeemanagement.timesheet.TimesheetRepository;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -103,8 +106,8 @@ public class PayrollRunService {
         return PayPeriodResponse.from(payPeriodRepository.save(new PayPeriod(name, startDate, endDate, payDate)));
     }
 
-    public List<PayPeriodResponse> getAllPayPeriods() {
-        return payPeriodRepository.findAll().stream().map(PayPeriodResponse::from).toList();
+    public Page<PayPeriodResponse> getAllPayPeriods(Pageable pageable) {
+        return payPeriodRepository.findAll(pageable).map(PayPeriodResponse::from);
     }
 
     @Transactional
@@ -120,9 +123,15 @@ public class PayrollRunService {
         PayrollRun run = payrollRunRepository.save(new PayrollRun(payPeriodId, runByUserId));
 
         List<TaxConfiguration> activeTaxConfigurations = taxConfigurationRepository.findByActiveTrue();
+        List<EmployeePayrollProfile> activeProfiles = payrollProfileRepository.findByActiveTrue();
 
-        for (EmployeePayrollProfile profile : payrollProfileRepository.findByActiveTrue()) {
-            generateEntry(run, period, profile, activeTaxConfigurations);
+        Map<UUID, BigDecimal> overtimeAmountsByEmployeeId = calculateOvertimeAmounts(activeProfiles, period);
+
+        for (EmployeePayrollProfile profile : activeProfiles) {
+            generateEntry(
+                    run, period, profile, activeTaxConfigurations,
+                    overtimeAmountsByEmployeeId.get(profile.getEmployeeId())
+            );
         }
 
         auditService.log("PAYROLL_RUN_CREATED", "PayrollRun", run.getId(), AuditService.RESULT_SUCCESS);
@@ -134,7 +143,8 @@ public class PayrollRunService {
             PayrollRun run,
             PayPeriod period,
             EmployeePayrollProfile profile,
-            List<TaxConfiguration> activeTaxConfigurations
+            List<TaxConfiguration> activeTaxConfigurations,
+            BigDecimal overtimeAmount
     ) {
         PayrollRunEntry entry = payrollRunEntryRepository.save(
                 new PayrollRunEntry(run.getId(), profile.getEmployeeId())
@@ -143,8 +153,6 @@ public class PayrollRunService {
         payrollLineItemRepository.save(new PayrollLineItem(
                 entry.getId(), PayrollLineItem.TYPE_EARNING, "BASIC_SALARY", "Base salary", profile.getBaseSalary()
         ));
-
-        BigDecimal overtimeAmount = calculateOvertimeAmount(profile, period);
 
         if (overtimeAmount != null && overtimeAmount.signum() > 0) {
             payrollLineItemRepository.save(new PayrollLineItem(
@@ -173,32 +181,66 @@ public class PayrollRunService {
         entry.recalculate(payrollLineItemRepository.findByPayrollRunEntryId(entry.getId()));
     }
 
-    private BigDecimal calculateOvertimeAmount(EmployeePayrollProfile profile, PayPeriod period) {
+    /**
+     * Batch form of the per-profile overtime calculation: one query for every
+     * approved timesheet across all overtime-eligible employees for this
+     * period, plus one aggregate query for their total hours, instead of the
+     * previous one-timesheet-lookup-plus-one-entries-fetch pair per employee.
+     */
+    private Map<UUID, BigDecimal> calculateOvertimeAmounts(
+            List<EmployeePayrollProfile> profiles, PayPeriod period
+    ) {
+        List<EmployeePayrollProfile> overtimeEligibleProfiles = profiles.stream()
+                .filter(profile -> profile.getStandardHoursPerPeriod() != null
+                        && profile.getOvertimeHourlyRate() != null)
+                .toList();
 
-        if (profile.getStandardHoursPerPeriod() == null || profile.getOvertimeHourlyRate() == null) {
-            return null;
+        if (overtimeEligibleProfiles.isEmpty()) {
+            return Map.of();
         }
 
-        Timesheet timesheet = timesheetRepository.findByEmployeeIdAndPeriodStartAndPeriodEndAndStatus(
-                profile.getEmployeeId(), period.getStartDate(), period.getEndDate(), TIMESHEET_STATUS_APPROVED
-        ).orElse(null);
+        List<UUID> employeeIds = overtimeEligibleProfiles.stream()
+                .map(EmployeePayrollProfile::getEmployeeId)
+                .toList();
 
-        if (timesheet == null) {
-            return null;
+        List<Timesheet> approvedTimesheets = timesheetRepository
+                .findByEmployeeIdInAndPeriodStartAndPeriodEndAndStatus(
+                        employeeIds, period.getStartDate(), period.getEndDate(), TIMESHEET_STATUS_APPROVED
+                );
+
+        if (approvedTimesheets.isEmpty()) {
+            return Map.of();
         }
 
-        BigDecimal totalHours = timesheetEntryRepository.findByTimesheetIdOrderByWorkDateAsc(timesheet.getId())
+        Map<UUID, UUID> timesheetIdByEmployeeId = approvedTimesheets.stream()
+                .collect(Collectors.toMap(Timesheet::getEmployeeId, Timesheet::getId));
+
+        Map<UUID, BigDecimal> totalHoursByTimesheetId = timesheetEntryRepository
+                .sumHoursGroupedByTimesheetId(approvedTimesheets.stream().map(Timesheet::getId).toList())
                 .stream()
-                .map(TimesheetEntry::getHoursWorked)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
+                .collect(Collectors.toMap(TimesheetHoursSummary::getTimesheetId, TimesheetHoursSummary::getTotalHours));
 
-        BigDecimal overtimeHours = totalHours.subtract(profile.getStandardHoursPerPeriod());
+        Map<UUID, BigDecimal> overtimeAmountsByEmployeeId = new HashMap<>();
 
-        if (overtimeHours.signum() <= 0) {
-            return null;
+        for (EmployeePayrollProfile profile : overtimeEligibleProfiles) {
+
+            UUID timesheetId = timesheetIdByEmployeeId.get(profile.getEmployeeId());
+
+            if (timesheetId == null) {
+                continue;
+            }
+
+            BigDecimal totalHours = totalHoursByTimesheetId.getOrDefault(timesheetId, BigDecimal.ZERO);
+            BigDecimal overtimeHours = totalHours.subtract(profile.getStandardHoursPerPeriod());
+
+            if (overtimeHours.signum() > 0) {
+                overtimeAmountsByEmployeeId.put(
+                        profile.getEmployeeId(), overtimeHours.multiply(profile.getOvertimeHourlyRate())
+                );
+            }
         }
 
-        return overtimeHours.multiply(profile.getOvertimeHourlyRate());
+        return overtimeAmountsByEmployeeId;
     }
 
     public PayrollRunResponse getRun(UUID runId) {

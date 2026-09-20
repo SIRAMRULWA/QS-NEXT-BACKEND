@@ -37,7 +37,9 @@ import za.co.qsnext.employeemanagement.recruitment.JobRequisition;
 import za.co.qsnext.employeemanagement.recruitment.JobRequisitionRepository;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
@@ -240,10 +242,7 @@ public class AiService {
         Employee employee = findEmployeeOrThrow(employeeId);
         assertCanAccessEmployee(employee, requesterUserId, requesterCanManage);
 
-        List<EmployeeSkill> employeeSkills = employeeSkillRepository.findByEmployeeId(employeeId);
-        String skillNames = employeeSkills.stream()
-                .map(es -> skillRepository.findById(es.getSkillId()).map(Skill::getName).orElse("Unknown skill"))
-                .collect(Collectors.joining(", "));
+        String skillNames = resolveSkillNames(employeeSkillRepository.findByEmployeeId(employeeId));
 
         String prompt = "Job title: %s\nCurrent skills: %s".formatted(
                 employee.getJobTitle(), skillNames.isBlank() ? "(none recorded)" : skillNames);
@@ -259,10 +258,7 @@ public class AiService {
         Employee employee = findEmployeeOrThrow(employeeId);
         assertCanAccessEmployee(employee, requesterUserId, requesterCanManage);
 
-        List<EmployeeSkill> employeeSkills = employeeSkillRepository.findByEmployeeId(employeeId);
-        String skillNames = employeeSkills.stream()
-                .map(es -> skillRepository.findById(es.getSkillId()).map(Skill::getName).orElse("Unknown skill"))
-                .collect(Collectors.joining(", "));
+        String skillNames = resolveSkillNames(employeeSkillRepository.findByEmployeeId(employeeId));
 
         List<Course> activeCourses = courseRepository.findByActiveTrue();
         String courseCatalog = activeCourses.stream()
@@ -328,6 +324,22 @@ public class AiService {
         return integrationConfigRepository.findByType(IntegrationConfig.TYPE_AI)
                 .map(IntegrationConfig::isEnabled)
                 .orElse(false);
+    }
+
+    private String resolveSkillNames(List<EmployeeSkill> employeeSkills) {
+
+        if (employeeSkills.isEmpty()) {
+            return "";
+        }
+
+        Map<UUID, String> skillNamesById = skillRepository
+                .findAllById(employeeSkills.stream().map(EmployeeSkill::getSkillId).toList())
+                .stream()
+                .collect(Collectors.toMap(Skill::getId, Skill::getName));
+
+        return employeeSkills.stream()
+                .map(es -> skillNamesById.getOrDefault(es.getSkillId(), "Unknown skill"))
+                .collect(Collectors.joining(", "));
     }
 
     private Employee findEmployeeOrThrow(UUID employeeId) {

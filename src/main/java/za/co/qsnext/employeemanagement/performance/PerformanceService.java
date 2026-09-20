@@ -1,5 +1,7 @@
 package za.co.qsnext.employeemanagement.performance;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -68,8 +70,8 @@ public class PerformanceService {
         );
     }
 
-    public List<PerformanceCycleResponse> getAllCycles() {
-        return cycleRepository.findAll().stream().map(PerformanceCycleResponse::from).toList();
+    public Page<PerformanceCycleResponse> getAllCycles(Pageable pageable) {
+        return cycleRepository.findAll(pageable).map(PerformanceCycleResponse::from);
     }
 
     @Transactional
