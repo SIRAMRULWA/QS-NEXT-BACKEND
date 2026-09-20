@@ -34,9 +34,8 @@ security:
     max-requests: 100000
     window-seconds: 60
 
-# Fast retry/backoff and a short outbox-stuck threshold so tests that
-# exercise the retry -> DLQ path and the outbox sweep don't have to wait
-# out production-sized delays.
+# Fast retry/backoff so tests that exercise the retry -> DLQ path don't
+# have to wait out production-sized delays.
 email:
   from-address: no-reply@qsnext.co.za
 
@@ -48,5 +47,15 @@ email:
 
   outbox:
     sweep-interval-ms: 1000
-    stuck-threshold-seconds: 1
+    # A 1-second threshold sounded appealingly fast, but it actively broke
+    # things: the sweep would republish an email that was still legitimately
+    # mid-flight through its normal after-commit publish (not lost at all),
+    # so the same row got consumed twice - and Email's @Version column then
+    # threw ObjectOptimisticLockingFailureException on the second save,
+    # which is not an EmailDeliveryException so EmailConsumer never catches
+    # it, sending an otherwise-healthy email to the DLQ. 30s is still far
+    # below production's 120s default and imperceptible next to this
+    # suite's Testcontainers startup time, but gives the real pipeline
+    # enough room that the sweep only ever fires for genuinely stuck mail.
+    stuck-threshold-seconds: 30
     sweep-batch-size: 50
