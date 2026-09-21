@@ -4,6 +4,9 @@ target/
 !**/src/main/**/target/
 !**/src/test/**/target/
 
+### Local document storage (document.storage.local.base-path) ###
+/data/
+
 ### Environment secrets ###
 .env
 .env.*
