@@ -136,7 +136,16 @@ jobs:
           exit_code=$(docker inspect qsnext-backend --format '{{.State.ExitCode}}')
           docker logs qsnext-backend | tail -40
           echo "Container exit code: $exit_code"
-          if [ "$exit_code" != "0" ]; then
+          # A JVM that catches SIGTERM, runs its shutdown hooks, and then
+          # terminates conventionally reports exit code 143 (128 + SIGTERM's
+          # signal number 15) - that is what "clean shutdown" looks like for
+          # a process terminated by a signal, not a failure. 0 covers the
+          # (unlikely, but harmless) case of the JVM calling System.exit(0)
+          # on its own before the signal is even delivered. Anything else -
+          # 137 (SIGKILL, meaning Docker had to force-kill it after the
+          # graceful window expired) above all - means SIGTERM either never
+          # reached the JVM or its shutdown hooks hung, and is a real bug.
+          if [ "$exit_code" != "0" ] && [ "$exit_code" != "143" ]; then
             echo "::error::Container did not shut down cleanly (exit code $exit_code) - SIGTERM may not be reaching the JVM"
             exit 1
           fi
