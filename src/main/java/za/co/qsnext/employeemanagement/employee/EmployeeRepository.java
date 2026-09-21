@@ -38,14 +38,22 @@ public interface EmployeeRepository extends JpaRepository<Employee, UUID> {
      * Directory search: matches against first name, last name, job title
      * or employee number. A blank/null query matches everything (browse
      * mode).
+     *
+     * <p>The parameter is explicitly cast to {@code text} in every branch.
+     * Without it, a {@code null} query (the normal "browse mode" value -
+     * see DirectoryService) leaves Postgres unable to infer a concrete
+     * type for the parameter bound inside {@code lower(concat(...))}, and
+     * the JDBC driver falls back to binding it as {@code bytea}, which
+     * blows up with "function lower(bytea) does not exist". The cast
+     * pins the type up front regardless of the bound value.
      */
     @Query("""
             select e from Employee e
             where :query is null
-            or lower(e.firstName) like lower(concat('%', :query, '%'))
-            or lower(e.lastName) like lower(concat('%', :query, '%'))
-            or lower(e.jobTitle) like lower(concat('%', :query, '%'))
-            or lower(e.employeeNumber) like lower(concat('%', :query, '%'))
+            or lower(e.firstName) like lower(concat('%', cast(:query as string), '%'))
+            or lower(e.lastName) like lower(concat('%', cast(:query as string), '%'))
+            or lower(e.jobTitle) like lower(concat('%', cast(:query as string), '%'))
+            or lower(e.employeeNumber) like lower(concat('%', cast(:query as string), '%'))
             """)
     Page<Employee> search(@Param("query") String query, Pageable pageable);
 
