@@ -78,6 +78,14 @@ services:
       # Netlify site origin, e.g. https://qsnext.netlify.app
       - key: CORS_ALLOWED_ORIGINS
         sync: false
+      # Every request reaches the app through Render's load balancer on
+      # the private network. Trusting only private ranges lets the rate
+      # limiter and audit log see the real client address from
+      # X-Forwarded-For; the container is not reachable directly from
+      # the internet, so no external caller can present one of these as
+      # its peer address.
+      - key: SECURITY_TRUSTED_PROXIES
+        value: "10.0.0.0/8,172.16.0.0/12,192.168.0.0/16"
 
       # --- Mail (any SMTP provider, e.g. Brevo, Mailgun, SendGrid) ---
       - key: MAIL_HOST
