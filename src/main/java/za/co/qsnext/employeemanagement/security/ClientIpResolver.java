@@ -26,6 +26,12 @@ import java.util.List;
  * a naive deployment without a reverse proxy needs, and one an operator
  * deploying behind a real load balancer opts out of explicitly by listing
  * its address(es).
+ *
+ * <p>When the header is honoured, it is read right to left and the first
+ * address that is not itself a trusted proxy is the client. Each proxy
+ * appends the address it received the request from, so only the entries a
+ * trusted proxy appended are reliable; the leftmost entry is whatever the
+ * caller chose to send and must never be used on its own.
  */
 @Component
 public class ClientIpResolver {
@@ -60,10 +66,32 @@ public class ClientIpResolver {
             String forwardedFor = request.getHeader(FORWARDED_FOR_HEADER);
 
             if (forwardedFor != null && !forwardedFor.isBlank()) {
-                return forwardedFor.split(",")[0].trim();
+                return resolveFromForwardedFor(forwardedFor, remoteAddr);
             }
         }
 
+        return remoteAddr;
+    }
+
+    private String resolveFromForwardedFor(String forwardedFor, String remoteAddr) {
+
+        String[] hops = forwardedFor.split(",");
+
+        for (int i = hops.length - 1; i >= 0; i--) {
+
+            String hop = hops[i].trim();
+
+            if (hop.isEmpty()) {
+                continue;
+            }
+
+            if (!isTrustedProxy(hop)) {
+                return hop;
+            }
+        }
+
+        // Every hop is a trusted proxy - the request originated inside the
+        // trusted network itself, so the direct peer is as good as any.
         return remoteAddr;
     }
 
@@ -73,6 +101,12 @@ public class ClientIpResolver {
             return false;
         }
 
-        return trustedProxyMatchers.stream().anyMatch(matcher -> matcher.matches(remoteAddr));
+        try {
+            return trustedProxyMatchers.stream().anyMatch(matcher -> matcher.matches(remoteAddr));
+        } catch (IllegalArgumentException malformedAddress) {
+            // A forwarded hop is caller-influenced text, not necessarily a
+            // valid IP - treat anything unparseable as untrusted.
+            return false;
+        }
     }
 }
