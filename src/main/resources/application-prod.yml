@@ -6,7 +6,12 @@
 # startup, never silently connect to the wrong database.
 spring:
   datasource:
-    url: ${DB_URL}
+    # DB_URL wins when set. Otherwise the JDBC URL is assembled from
+    # DB_HOST/DB_PORT/DB_NAME - for platforms such as Render that expose
+    # a database's host/port/name as separate values but no JDBC URL
+    # (see render.yaml). DB_HOST and DB_NAME have no default, so a
+    # deployment missing both DB_URL and them still fails fast.
+    url: ${DB_URL:jdbc:postgresql://${DB_HOST}:${DB_PORT:5432}/${DB_NAME}}
     username: ${DB_USERNAME}
     password: ${DB_PASSWORD}
 
