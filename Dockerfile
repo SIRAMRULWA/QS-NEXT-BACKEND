@@ -40,8 +40,12 @@ USER qsnext
 
 EXPOSE 8080
 
+# Reads SERVER_PORT so this stays correct wherever the app actually ends
+# up listening (e.g. Render's Docker runtime assigns 10000, overriding
+# the 8080 default here and in EXPOSE above) - shell form, so the env
+# var is expanded fresh on every check, not baked in at build time.
 HEALTHCHECK --interval=30s --timeout=5s --start-period=60s --retries=3 \
-    CMD wget --no-verbose --tries=1 --spider http://localhost:8080/actuator/health/liveness || exit 1
+    CMD wget --no-verbose --tries=1 --spider http://localhost:${SERVER_PORT:-8080}/actuator/health/liveness || exit 1
 
 # JAVA_TOOL_OPTIONS lets an operator tune JVM flags (heap size,
 # container-awareness overrides) at deploy time without rebuilding the

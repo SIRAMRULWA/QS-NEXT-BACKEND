@@ -147,8 +147,15 @@ services:
       # ------------------------------------------------------------
       - key: SPRING_PROFILES_ACTIVE
         value: prod
+      # Render's Docker runtime scans for (and proxies to) port 10000 by
+      # default, regardless of the Dockerfile's EXPOSE - confirmed by a
+      # real failed deploy ("No open ports detected... qs-next-backend.
+      # onrender.com:10000") where the app was listening on 8080 instead.
+      # The Dockerfile's own HEALTHCHECK reads this same env var, so it
+      # stays correct for both Render (10000) and a plain local
+      # `docker run` (defaults to 8080, matching EXPOSE).
       - key: SERVER_PORT
-        value: "8080"
+        value: "10000"
       - key: API_DOCS_ENABLED
         value: "false"
       - key: SWAGGER_UI_ENABLED
