@@ -1,5 +1,7 @@
 package za.co.qsnext.employeemanagement.department;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import za.co.qsnext.employeemanagement.exception.DepartmentNotFoundException;
@@ -17,6 +19,10 @@ public class DepartmentService {
             DepartmentRepository departmentRepository
     ) {
         this.departmentRepository = departmentRepository;
+    }
+
+    public Page<Department> getAll(Pageable pageable) {
+        return departmentRepository.findAll(pageable);
     }
 
     public Department getById(UUID departmentId) {

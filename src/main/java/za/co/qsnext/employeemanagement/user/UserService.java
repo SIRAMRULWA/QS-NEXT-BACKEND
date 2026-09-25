@@ -2,6 +2,8 @@ package za.co.qsnext.employeemanagement.user;
 
 import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -33,6 +35,10 @@ public class UserService {
         this.userRepository = userRepository;
         this.cacheManager = cacheManager;
         this.emailService = emailService;
+    }
+
+    public Page<User> search(String query, Pageable pageable) {
+        return userRepository.search(query, pageable);
     }
 
     public User getById(UUID userId) {

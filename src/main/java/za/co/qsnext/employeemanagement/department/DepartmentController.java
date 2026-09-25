@@ -4,6 +4,9 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.v3.oas.annotations.Operation;
 
 import jakarta.validation.Valid;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -26,6 +29,23 @@ public class DepartmentController {
             DepartmentService departmentService
     ) {
         this.departmentService = departmentService;
+    }
+
+    @PreAuthorize("hasAuthority('DEPARTMENT_READ')")
+    @Operation(summary = "Get all")
+    @GetMapping
+    public ResponseEntity<Page<DepartmentResponse>> getAll(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size
+    ) {
+
+        Pageable pageable = createPageable(page, size);
+
+        Page<DepartmentResponse> response =
+                departmentService.getAll(pageable)
+                        .map(DepartmentResponse::from);
+
+        return ResponseEntity.ok(response);
     }
 
     @PreAuthorize("hasAuthority('DEPARTMENT_READ')")
@@ -93,5 +113,18 @@ public class DepartmentController {
         departmentService.delete(departmentId);
 
         return ResponseEntity.noContent().build();
+    }
+
+    private Pageable createPageable(int page, int size) {
+
+        if (page < 0) {
+            page = 0;
+        }
+
+        if (size < 1 || size > 100) {
+            size = 20;
+        }
+
+        return PageRequest.of(page, size);
     }
 }
