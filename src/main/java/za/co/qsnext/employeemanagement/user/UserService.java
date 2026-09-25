@@ -10,6 +10,7 @@ import org.springframework.transaction.annotation.Transactional;
 import za.co.qsnext.employeemanagement.config.RedisCacheNames;
 import za.co.qsnext.employeemanagement.email.EmailService;
 import za.co.qsnext.employeemanagement.email.EmailTemplate;
+import za.co.qsnext.employeemanagement.exception.BusinessRuleException;
 import za.co.qsnext.employeemanagement.exception.DuplicateResourceException;
 import za.co.qsnext.employeemanagement.exception.UserNotFoundException;
 
@@ -23,16 +24,21 @@ import java.util.UUID;
 @Transactional(readOnly = true)
 public class UserService {
 
+    private static final String ADMIN_ROLE = "ADMIN";
+
     private final UserRepository userRepository;
+    private final RoleRepository roleRepository;
     private final CacheManager cacheManager;
     private final EmailService emailService;
 
     public UserService(
             UserRepository userRepository,
+            RoleRepository roleRepository,
             CacheManager cacheManager,
             EmailService emailService
     ) {
         this.userRepository = userRepository;
+        this.roleRepository = roleRepository;
         this.cacheManager = cacheManager;
         this.emailService = emailService;
     }
@@ -97,6 +103,44 @@ public class UserService {
     public void enable(UUID userId) {
         User user = getById(userId);
         user.enable();
+        evictAuthorizationCache(user.getUsername());
+    }
+
+    @Transactional
+    public void assignRole(UUID userId, String roleName) {
+        User user = getById(userId);
+        Role role = roleRepository.findByName(roleName)
+                .orElseThrow(() ->
+                        new BusinessRuleException("Unknown role: " + roleName)
+                );
+
+        user.assignRole(role);
+        evictAuthorizationCache(user.getUsername());
+    }
+
+    /**
+     * Removing a user's own last ADMIN membership - or the system's only
+     * remaining ADMIN - would leave the app with no one able to grant
+     * roles at all, including back to themselves. Both are blocked.
+     */
+    @Transactional
+    public void removeRole(UUID userId, String roleName) {
+        User user = getById(userId);
+
+        if (ADMIN_ROLE.equals(roleName)
+                && user.hasRole(ADMIN_ROLE)
+                && userRepository.countByRolesName(ADMIN_ROLE) <= 1) {
+            throw new BusinessRuleException(
+                    "Cannot remove the last administrator"
+            );
+        }
+
+        Role role = roleRepository.findByName(roleName)
+                .orElseThrow(() ->
+                        new BusinessRuleException("Unknown role: " + roleName)
+                );
+
+        user.removeRole(role);
         evictAuthorizationCache(user.getUsername());
     }
 

@@ -94,6 +94,36 @@ public class UserController {
         return ResponseEntity.noContent().build();
     }
 
+    @PreAuthorize("hasAuthority('USER_ROLE_MANAGE')")
+    @Operation(summary = "Assign a role to a user")
+    @PostMapping("/{userId}/roles/{roleName}")
+    public ResponseEntity<UserResponse> assignRole(
+            @PathVariable UUID userId,
+            @PathVariable String roleName
+    ) {
+
+        userService.assignRole(userId, roleName);
+
+        return ResponseEntity.ok(
+                UserResponse.from(userService.getById(userId))
+        );
+    }
+
+    @PreAuthorize("hasAuthority('USER_ROLE_MANAGE')")
+    @Operation(summary = "Remove a role from a user")
+    @DeleteMapping("/{userId}/roles/{roleName}")
+    public ResponseEntity<UserResponse> removeRole(
+            @PathVariable UUID userId,
+            @PathVariable String roleName
+    ) {
+
+        userService.removeRole(userId, roleName);
+
+        return ResponseEntity.ok(
+                UserResponse.from(userService.getById(userId))
+        );
+    }
+
     private Pageable createPageable(int page, int size) {
 
         if (page < 0) {

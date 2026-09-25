@@ -18,15 +18,25 @@ public interface UserRepository extends JpaRepository<User, UUID> {
     })
     Optional<User> findByUsername(String username);
 
+    // Overrides the inherited findById to eagerly fetch roles - callers map
+    // to UserResponse (which includes role names) outside of this method's
+    // transaction, and open-in-view is disabled, so a lazy roles collection
+    // would throw LazyInitializationException.
+    @EntityGraph(attributePaths = {"roles"})
+    Optional<User> findById(UUID id);
+
     Optional<User> findByEmail(String email);
 
     boolean existsByUsername(String username);
 
     boolean existsByEmail(String email);
 
+    long countByRolesName(String roleName);
+
     // :query is cast to text so a null value (browse-everything) doesn't
     // hit "function lower(bytea) does not exist" - see EmployeeRepository
     // .search() for the same fix against the same underlying issue.
+    @EntityGraph(attributePaths = {"roles"})
     @Query("""
             select u from User u
             where :query is null
