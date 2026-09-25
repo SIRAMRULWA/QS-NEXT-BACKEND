@@ -189,6 +189,14 @@ public class User {
         roles.add(role);
     }
 
+    public void removeRole(Role role) {
+        roles.remove(role);
+    }
+
+    public boolean hasRole(String roleName) {
+        return roles.stream().anyMatch(r -> r.getName().equals(roleName));
+    }
+
     public void changeEmail(String email) {
         this.email = email;
     }
