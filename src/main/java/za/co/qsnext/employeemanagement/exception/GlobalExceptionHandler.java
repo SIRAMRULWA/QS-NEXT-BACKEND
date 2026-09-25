@@ -6,17 +6,23 @@ import jakarta.validation.ConstraintViolationException;
 import za.co.qsnext.employeemanagement.ai.AiProviderException;
 import za.co.qsnext.employeemanagement.document.DocumentStorageException;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.time.OffsetDateTime;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+    private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
     @ExceptionHandler(EmployeeNotFoundException.class)
     public ResponseEntity<ErrorResponse> handleEmployeeNotFound(
@@ -430,6 +436,43 @@ public class GlobalExceptionHandler {
     }
 
     /**
+     * DispatcherServlet throws this for any request path that matches no
+     * controller mapping and no static resource. It's an Exception
+     * subclass, so without this handler it falls through to the
+     * catch-all below and is misreported as a 500.
+     */
+    @ExceptionHandler(NoResourceFoundException.class)
+    public ResponseEntity<ErrorResponse> handleNoResourceFound(
+            NoResourceFoundException exception,
+            HttpServletRequest request
+    ) {
+        return buildResponse(
+                HttpStatus.NOT_FOUND,
+                "NOT_FOUND",
+                "No handler found for " + request.getMethod() + " " + request.getRequestURI(),
+                request.getRequestURI()
+        );
+    }
+
+    /**
+     * Thrown when the path matches a mapping but the HTTP method used
+     * doesn't. Without this handler it falls through to the catch-all
+     * below and is misreported as a 500 instead of 405.
+     */
+    @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
+    public ResponseEntity<ErrorResponse> handleMethodNotSupported(
+            HttpRequestMethodNotSupportedException exception,
+            HttpServletRequest request
+    ) {
+        return buildResponse(
+                HttpStatus.METHOD_NOT_ALLOWED,
+                "METHOD_NOT_ALLOWED",
+                exception.getMessage(),
+                request.getRequestURI()
+        );
+    }
+
+    /**
      * Catch-all handler.
      *
      * This remains after the more specific handlers.
@@ -439,6 +482,7 @@ public class GlobalExceptionHandler {
             Exception exception,
             HttpServletRequest request
     ) {
+        log.error("Unhandled exception for {} {}", request.getMethod(), request.getRequestURI(), exception);
         return buildResponse(
                 HttpStatus.INTERNAL_SERVER_ERROR,
                 "INTERNAL_SERVER_ERROR",

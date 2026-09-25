@@ -1,0 +1,183 @@
+# Render Blueprint for the QSNext backend.
+#
+# Applying this in Render's dashboard (Blueprints -> sync) updates the
+# existing "QS-NEXT-BACKEND" web service in place (Render matches by
+# service name) rather than creating a duplicate.
+#
+# Every ${VAR} this file sets was cross-checked against what
+# src/main/resources/application*.yml and the @Value-annotated Java
+# classes actually read - see .env.example for the full reference list,
+# including the optional variables intentionally left out of this
+# Blueprint (see the bottom of this file).
+#
+# Neon, Upstash and CloudAMQP are external managed services, not Render
+# resources, so there is no `databases:` section here - only the one web
+# service, wired to them purely through environment variables.
+#
+# Secrets: every `sync: false` entry below must be entered once in the
+# Render dashboard (Environment tab) after the first Blueprint sync -
+# Render will prompt for these automatically. None of their real values
+# are, or should ever be, written to this file or committed to git.
+
+services:
+  - type: web
+    name: QS-NEXT-BACKEND
+    runtime: docker
+    plan: free
+    branch: master
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    # readinessState + db + redis + rabbit (see the readiness health
+    # group in application.yml) - this is what actually confirms Neon,
+    # Upstash and CloudAMQP are all reachable before Render routes
+    # traffic to a new instance. The Dockerfile's own HEALTHCHECK
+    # (liveness only, a separate Docker-level mechanism) is unchanged.
+    healthCheckPath: /actuator/health/readiness
+
+    envVars:
+      # ------------------------------------------------------------
+      # Database (Neon PostgreSQL)
+      # ------------------------------------------------------------
+      # sslmode=require: Neon requires TLS. prepareThreshold=0: this is
+      # the pooled ("-pooler") endpoint, which routes through PgBouncer
+      # in transaction-pooling mode - pgjdbc's default server-side
+      # prepared statements don't survive that (intermittent "prepared
+      # statement already exists" errors under load), so this disables
+      # them at the driver level. No code change needed either way; the
+      # driver reads both straight off the URL.
+      - key: DB_URL
+        value: jdbc:postgresql://ep-odd-shadow-b4ep964t-pooler.c-6.us-east-2.aws.neon.tech/neondb?sslmode=require&prepareThreshold=0
+      - key: DB_USERNAME
+        value: neondb_owner
+      - key: DB_PASSWORD
+        sync: false
+      # Conservative sizing for a Neon free-tier compute's connection
+      # limit - see application-prod.yml for where these are consumed.
+      - key: DB_POOL_MAX_SIZE
+        value: "5"
+      - key: DB_POOL_MIN_IDLE
+        value: "1"
+
+      # ------------------------------------------------------------
+      # Redis (Upstash)
+      # ------------------------------------------------------------
+      - key: REDIS_HOST
+        value: fine-burro-288273.upstash.io
+      - key: REDIS_PORT
+        value: "6379"
+      - key: REDIS_USERNAME
+        value: default
+      - key: REDIS_PASSWORD
+        sync: false
+      - key: REDIS_SSL_ENABLED
+        value: "true"
+      - key: REDIS_CONNECT_TIMEOUT_MS
+        value: "5000"
+      - key: REDIS_COMMAND_TIMEOUT_MS
+        value: "3000"
+
+      # ------------------------------------------------------------
+      # RabbitMQ (CloudAMQP)
+      # ------------------------------------------------------------
+      - key: RABBITMQ_HOST
+        value: fuji.lmq.cloudamqp.com
+      - key: RABBITMQ_PORT
+        value: "5671"
+      - key: RABBITMQ_USERNAME
+        value: misksfqk
+      - key: RABBITMQ_PASSWORD
+        sync: false
+      # CloudAMQP assigns its own per-instance virtual host (here, the
+      # same string as the username - that's CloudAMQP's own free/shared
+      # plan convention, not a typo).
+      - key: RABBITMQ_VHOST
+        value: misksfqk
+      - key: RABBITMQ_SSL_ENABLED
+        value: "true"
+      - key: RABBITMQ_CONNECTION_TIMEOUT_MS
+        value: "30000"
+
+      # ------------------------------------------------------------
+      # JWT / security
+      # ------------------------------------------------------------
+      # Render generates a cryptographically random value on first sync,
+      # stores it only in Render, and never writes it to this file or
+      # git. Swap to `sync: false` instead if you'd rather set your own
+      # (e.g. `openssl rand -base64 48`, entered directly in the
+      # dashboard).
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_ACCESS_TOKEN_EXPIRATION
+        value: "900000"
+      - key: JWT_REFRESH_TOKEN_EXPIRATION
+        value: "604800000"
+      - key: AUTH_MAX_FAILED_LOGIN_ATTEMPTS
+        value: "5"
+      - key: AUTH_ACCOUNT_LOCK_DURATION_MINUTES
+        value: "15"
+      - key: AUTH_PASSWORD_RESET_TOKEN_EXPIRATION_MINUTES
+        value: "30"
+
+      # ------------------------------------------------------------
+      # Rate limiting / caching
+      # ------------------------------------------------------------
+      - key: RATE_LIMIT_MAX_REQUESTS
+        value: "10"
+      - key: RATE_LIMIT_WINDOW_SECONDS
+        value: "60"
+      - key: CACHE_DEFAULT_TTL_MINUTES
+        value: "10"
+      - key: CACHE_USER_PRINCIPAL_TTL_MINUTES
+        value: "5"
+
+      # ------------------------------------------------------------
+      # CORS
+      # ------------------------------------------------------------
+      # Never a wildcard - CorsConfig only ever installs exact origins,
+      # and an empty/unset value denies all cross-origin requests rather
+      # than allowing them, so this is safe to leave unset until the
+      # GitHub Pages (and later app.qsnext.co.za) origin is known. Set
+      # in the dashboard as a comma-separated list, e.g.
+      # https://<user>.github.io,https://app.qsnext.co.za
+      - key: CORS_ALLOWED_ORIGINS
+        sync: false
+
+      # ------------------------------------------------------------
+      # Application / production profile
+      # ------------------------------------------------------------
+      - key: SPRING_PROFILES_ACTIVE
+        value: prod
+      - key: SERVER_PORT
+        value: "8080"
+      - key: API_DOCS_ENABLED
+        value: "false"
+      - key: SWAGGER_UI_ENABLED
+        value: "false"
+
+# Intentionally NOT included in this Blueprint (see the request this
+# file was prepared for):
+#
+# - MAIL_HOST / MAIL_PORT / MAIL_USERNAME / MAIL_PASSWORD /
+#   MAIL_SMTP_AUTH / MAIL_SMTP_STARTTLS / EMAIL_FROM_ADDRESS /
+#   EMAIL_CONSUMER_* / EMAIL_OUTBOX_* - no SMTP provider chosen yet.
+#   Spring Boot's mail autoconfiguration doesn't require a working SMTP
+#   connection at startup, so omitting these entirely is safe: the app
+#   starts and serves traffic normally, and any outbound email attempt
+#   retries per email.consumer.* and then dead-letters, exactly as
+#   observed in local testing with no SMTP server present. Add the
+#   MAIL_* variables (and flip the two SMTP toggles to "true") once a
+#   provider is chosen.
+# - DOCUMENT_STORAGE_LOCAL_BASE_PATH / DOCUMENT_MAX_FILE_SIZE /
+#   DOCUMENT_MAX_REQUEST_SIZE - object storage isn't configured yet.
+#   Leaving these unset keeps the local-filesystem default, which is a
+#   known blocker on Render's ephemeral disk (uploaded documents will
+#   not survive a redeploy) - not something to silently paper over here.
+# - ANTHROPIC_API_KEY / QSNEXT_AI_MODEL - optional AI features, safely
+#   disabled when unset; not part of this request.
+# - SECURITY_TRUSTED_PROXIES - left unset (the safe default: every
+#   request attributed to its direct peer, X-Forwarded-For ignored).
+#   Render's own edge proxies every request to this service, so rate
+#   limiting will bucket by Render's internal proxy address rather than
+#   real client IPs unless this is set to Render's proxy range - a minor
+#   accuracy loss, not a security hole, and not set here because that
+#   range isn't independently confirmed in this change.
