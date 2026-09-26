@@ -83,6 +83,9 @@ class LeastPrivilegeIntegrationTest extends AbstractIntegrationTest {
         mockMvc.perform(get("/api/v1/employees").header("Authorization", "Bearer " + ownerToken))
                 .andExpect(status().isForbidden());
 
+        mockMvc.perform(get("/api/v1/self-service/profile").header("Authorization", "Bearer " + ownerToken))
+                .andExpect(status().isOk());
+
         mockMvc.perform(post("/api/v1/leave/balances")
                         .header("Authorization", "Bearer " + ownerToken)
                         .contentType(MediaType.APPLICATION_JSON)

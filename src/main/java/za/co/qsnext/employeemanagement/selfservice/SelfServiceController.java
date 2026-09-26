@@ -93,7 +93,7 @@ public class SelfServiceController {
                     )
             )
     })
-    @PreAuthorize("hasAuthority('EMPLOYEE_READ')")
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/profile")
     public ResponseEntity<SelfServiceProfileResponse> getOwnProfile(
             Authentication authentication
