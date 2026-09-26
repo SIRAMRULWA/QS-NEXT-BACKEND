@@ -1,5 +1,6 @@
 package za.co.qsnext.employeemanagement.employee;
 
+import za.co.qsnext.employeemanagement.auth.RefreshTokenService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -27,6 +28,9 @@ import static org.mockito.Mockito.when;
 class EmployeeServiceTest {
 
     @Mock
+    private RefreshTokenService refreshTokenService;
+
+    @Mock
     private EmployeeRepository employeeRepository;
     @Mock
     private UserService userService;
@@ -37,7 +41,7 @@ class EmployeeServiceTest {
 
     @BeforeEach
     void setUp() {
-        employeeService = new EmployeeService(employeeRepository, userService, departmentService);
+        employeeService = new EmployeeService(employeeRepository, userService, departmentService, refreshTokenService);
     }
 
     private Employee employeeWithId(UUID id) {

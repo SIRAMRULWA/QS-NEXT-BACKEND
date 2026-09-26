@@ -33,7 +33,9 @@ public class RateLimitFilter extends OncePerRequestFilter {
             "/api/v1/auth/login",
             "/api/v1/auth/register",
             "/api/v1/auth/forgot-password",
-            "/api/v1/auth/reset-password"
+            "/api/v1/auth/reset-password",
+            "/api/v1/auth/verify-email",
+            "/api/v1/auth/resend-verification"
     );
 
     private static final String KEY_PREFIX = "ratelimit:";

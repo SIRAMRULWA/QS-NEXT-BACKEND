@@ -11,6 +11,7 @@ import za.co.qsnext.employeemanagement.email.EmailService;
 import za.co.qsnext.employeemanagement.email.EmailTemplate;
 import za.co.qsnext.employeemanagement.exception.BusinessRuleException;
 import za.co.qsnext.employeemanagement.exception.RecruitmentNotFoundException;
+import za.co.qsnext.employeemanagement.user.UserService;
 import za.co.qsnext.employeemanagement.notification.NotificationPublisher;
 import za.co.qsnext.employeemanagement.notification.NotificationType;
 import za.co.qsnext.employeemanagement.recruitment.dto.InterviewFeedbackResponse;
@@ -25,6 +26,8 @@ import java.util.UUID;
 @Transactional(readOnly = true)
 public class InterviewService {
 
+    private static final String INTERVIEWER_ROLE = "INTERVIEWER";
+
     private final InterviewRepository interviewRepository;
     private final InterviewFeedbackRepository feedbackRepository;
     private final ApplicationRepository applicationRepository;
@@ -34,6 +37,7 @@ public class InterviewService {
     private final EmailService emailService;
     private final NotificationPublisher notificationPublisher;
     private final AuditService auditService;
+    private final UserService userService;
 
     public InterviewService(
             InterviewRepository interviewRepository,
@@ -44,7 +48,8 @@ public class InterviewService {
             CalendarService calendarService,
             EmailService emailService,
             NotificationPublisher notificationPublisher,
-            AuditService auditService
+            AuditService auditService,
+            UserService userService
     ) {
         this.interviewRepository = interviewRepository;
         this.feedbackRepository = feedbackRepository;
@@ -55,6 +60,7 @@ public class InterviewService {
         this.emailService = emailService;
         this.notificationPublisher = notificationPublisher;
         this.auditService = auditService;
+        this.userService = userService;
     }
 
     @Transactional
@@ -81,6 +87,10 @@ public class InterviewService {
                 .orElseThrow(() -> new RecruitmentNotFoundException(
                         "Job posting not found: " + application.getJobPostingId()
                 ));
+
+        // Being assigned an interview is what makes someone an interviewer;
+        // "My Interviews" is no longer handed to every employee.
+        userService.assignRole(interviewerUserId, INTERVIEWER_ROLE);
 
         Interview interview = interviewRepository.save(
                 new Interview(applicationId, interviewerUserId, scheduledAt, durationMinutes, location)

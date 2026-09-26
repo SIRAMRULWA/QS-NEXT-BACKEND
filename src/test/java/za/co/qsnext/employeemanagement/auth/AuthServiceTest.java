@@ -69,6 +69,9 @@ class AuthServiceTest {
     private static final int MAX_FAILED_LOGIN_ATTEMPTS = 5;
 
     @Mock
+    private EmailVerificationService emailVerificationService;
+
+    @Mock
     private UserRepository userRepository;
     @Mock
     private EmployeeRepository employeeRepository;
@@ -114,6 +117,7 @@ class AuthServiceTest {
                 emailService,
                 auditService,
                 tokenRevocationService,
+                emailVerificationService,
                 new ClientIpResolver(""),
                 MAX_FAILED_LOGIN_ATTEMPTS,
                 15,

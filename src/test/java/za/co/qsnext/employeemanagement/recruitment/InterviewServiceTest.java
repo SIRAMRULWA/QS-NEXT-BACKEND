@@ -1,5 +1,6 @@
 package za.co.qsnext.employeemanagement.recruitment;
 
+import za.co.qsnext.employeemanagement.user.UserService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -37,6 +38,9 @@ import static org.mockito.Mockito.when;
 class InterviewServiceTest {
 
     @Mock
+    private UserService userService;
+
+    @Mock
     private InterviewRepository interviewRepository;
     @Mock
     private InterviewFeedbackRepository feedbackRepository;
@@ -61,7 +65,7 @@ class InterviewServiceTest {
     void setUp() {
         interviewService = new InterviewService(
                 interviewRepository, feedbackRepository, applicationRepository, candidateRepository,
-                postingRepository, calendarService, emailService, notificationPublisher, auditService);
+                postingRepository, calendarService, emailService, notificationPublisher, auditService, userService);
     }
 
     private Application applicationWithId(UUID id, UUID candidateId, UUID postingId) {

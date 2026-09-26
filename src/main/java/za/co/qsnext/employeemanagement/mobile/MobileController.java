@@ -31,8 +31,7 @@ public class MobileController {
     }
 
     @PreAuthorize("""
-            hasAuthority('EMPLOYEE_READ')
-            and hasAuthority('ATTENDANCE_READ')
+            hasAuthority('ATTENDANCE_READ')
             and hasAuthority('LEAVE_READ')
             and hasAuthority('CALENDAR_READ')
             and hasAuthority('NOTIFICATION_READ')

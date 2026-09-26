@@ -14,11 +14,11 @@ import java.time.OffsetDateTime;
 import java.util.UUID;
 
 /**
- * A person who has applied (or could apply) for a role. Deliberately
- * has no User account - candidates aren't authenticated system users,
- * so communication with them goes out by plain email (see
- * {@code EmailTemplate#INTERVIEW_INVITATION}/{@code #OFFER_EXTENDED}),
- * never through the in-app NotificationPublisher.
+ * A person who has applied (or could apply) for a role. A candidate HR
+ * enters by hand has no User account; one who applied through the job
+ * board is linked to their APPLICANT login via {@link #getUserId()}.
+ * Either way, communication goes out by plain email (see
+ * {@code EmailTemplate#INTERVIEW_INVITATION}/{@code #OFFER_EXTENDED}).
  */
 @Entity
 @Table(name = "candidates")
@@ -44,6 +44,9 @@ public class Candidate {
 
     @Column(name = "resume_document_id")
     private UUID resumeDocumentId;
+
+    @Column(name = "user_id")
+    private UUID userId;
 
     @Column(name = "source", length = 100)
     private String source;
@@ -124,5 +127,17 @@ public class Candidate {
 
     public String getFullName() {
         return firstName + " " + lastName;
+    }
+
+    public UUID getUserId() {
+        return userId;
+    }
+
+    /**
+     * Links this candidate to the self-signup login that applied, so the
+     * applicant can track their applications and a hire reuses the login.
+     */
+    public void linkUser(UUID userId) {
+        this.userId = userId;
     }
 }

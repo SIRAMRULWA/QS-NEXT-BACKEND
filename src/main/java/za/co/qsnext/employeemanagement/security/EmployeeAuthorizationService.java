@@ -6,6 +6,7 @@ import org.springframework.stereotype.Service;
 import za.co.qsnext.employeemanagement.employee.Employee;
 import za.co.qsnext.employeemanagement.employee.EmployeeRepository;
 
+import java.util.List;
 import java.util.UUID;
 
 @Service("employeeAuthorizationService")
@@ -49,9 +50,126 @@ public class EmployeeAuthorizationService {
 
         return employeeRepository
                 .findById(employeeId)
+                .map(employee ->
+                        currentUserId.equals(employee.getUserId())
+                                || isDirectManagerOf(employee, currentUserId)
+                )
+                .orElse(false);
+    }
+
+    /**
+     * True when the caller may act on this employee's own records
+     * (request leave, create a timesheet, clock in): the employee
+     * themselves, or HR/admin. Unlike {@link #canRead}, a line manager
+     * does NOT qualify - a manager approves their reports' requests but
+     * never files them on their behalf.
+     */
+    public boolean canActFor(
+            UUID employeeId,
+            Authentication authentication
+    ) {
+
+        if (authentication == null
+                || !authentication.isAuthenticated()) {
+            return false;
+        }
+
+        if (canManage(authentication)) {
+            return true;
+        }
+
+        UUID currentUserId = currentUserId(authentication);
+
+        if (currentUserId == null || employeeId == null) {
+            return false;
+        }
+
+        return employeeRepository
+                .findById(employeeId)
                 .map(Employee::getUserId)
                 .map(currentUserId::equals)
                 .orElse(false);
+    }
+
+    /**
+     * True when the caller may approve or reject this employee's leave,
+     * timesheets or expense claims: HR/admin for anyone, or the
+     * employee's direct manager. Nobody who isn't HR/admin can approve
+     * their own requests.
+     */
+    public boolean canApproveFor(
+            UUID employeeId,
+            Authentication authentication
+    ) {
+
+        if (authentication == null
+                || !authentication.isAuthenticated()) {
+            return false;
+        }
+
+        if (canManage(authentication)) {
+            return true;
+        }
+
+        UUID currentUserId = currentUserId(authentication);
+
+        if (currentUserId == null || employeeId == null) {
+            return false;
+        }
+
+        return employeeRepository
+                .findById(employeeId)
+                .map(employee -> isDirectManagerOf(employee, currentUserId))
+                .orElse(false);
+    }
+
+    /**
+     * The employee ids of the caller's direct reports; empty for anyone
+     * without an employee record or without reports.
+     */
+    public List<UUID> directReportIds(Authentication authentication) {
+
+        UUID currentUserId = currentUserId(authentication);
+
+        if (currentUserId == null) {
+            return List.of();
+        }
+
+        return employeeRepository.findByUserId(currentUserId)
+                .map(manager -> employeeRepository.findByManagerId(manager.getId())
+                        .stream()
+                        .map(Employee::getId)
+                        .toList())
+                .orElse(List.of());
+    }
+
+    private boolean isDirectManagerOf(
+            Employee employee,
+            UUID currentUserId
+    ) {
+
+        UUID managerId = employee.getManagerId();
+
+        if (managerId == null
+                || currentUserId.equals(employee.getUserId())) {
+            return false;
+        }
+
+        return employeeRepository.findById(managerId)
+                .map(Employee::getUserId)
+                .map(currentUserId::equals)
+                .orElse(false);
+    }
+
+    private UUID currentUserId(Authentication authentication) {
+
+        if (authentication == null) {
+            return null;
+        }
+
+        CustomUserDetails userDetails = getUserDetails(authentication);
+
+        return userDetails == null ? null : userDetails.getUserId();
     }
 
     /**

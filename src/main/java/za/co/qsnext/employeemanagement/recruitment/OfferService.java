@@ -225,16 +225,30 @@ public class OfferService {
 
         Candidate candidate = candidateForOffer(offer);
 
-        if (userRepository.existsByUsername(username)) {
-            throw new DuplicateResourceException("Username already exists: " + username);
+        // An applicant who applied through the job board already has a
+        // login; hiring promotes it instead of creating a second account.
+        boolean existingLogin = candidate.getUserId() != null;
+
+        User savedUser;
+
+        if (existingLogin) {
+            savedUser = userRepository.findById(candidate.getUserId())
+                    .orElseThrow(() -> new RecruitmentNotFoundException(
+                            "User not found for candidate: " + candidate.getId()
+                    ));
+            // EmployeeService#create swaps APPLICANT for EMPLOYEE.
+        } else {
+            if (userRepository.existsByUsername(username)) {
+                throw new DuplicateResourceException("Username already exists: " + username);
+            }
+
+            Role employeeRole = roleRepository.findByName(EMPLOYEE_ROLE)
+                    .orElseThrow(() -> new IllegalStateException("EMPLOYEE role is not configured"));
+
+            User user = new User(username, candidate.getEmail(), passwordService.encode(generateThrowawayPassword()));
+            user.assignRole(employeeRole);
+            savedUser = userRepository.save(user);
         }
-
-        Role employeeRole = roleRepository.findByName(EMPLOYEE_ROLE)
-                .orElseThrow(() -> new IllegalStateException("EMPLOYEE role is not configured"));
-
-        User user = new User(username, candidate.getEmail(), passwordService.encode(generateThrowawayPassword()));
-        user.assignRole(employeeRole);
-        User savedUser = userRepository.save(user);
 
         Employee employee = employeeService.create(
                 savedUser.getId(), departmentId, employeeNumber,
@@ -244,7 +258,9 @@ public class OfferService {
 
         application.markHired();
 
-        authService.forgotPassword(new ForgotPasswordRequest(candidate.getEmail()));
+        if (!existingLogin) {
+            authService.forgotPassword(new ForgotPasswordRequest(candidate.getEmail()));
+        }
 
         boolean onboardingStarted = onboardingTemplateId != null;
 

@@ -52,7 +52,10 @@ public class RecognitionController {
         return ResponseEntity.ok(recognitionService.getActiveTypes());
     }
 
-    @PreAuthorize("hasAuthority('RECOGNITION_GIVE')")
+    @PreAuthorize(
+            "hasAuthority('RECOGNITION_GIVE') and (hasAuthority('RECOGNITION_MANAGE') or " +
+                    "@employeeAuthorizationService.canApproveFor(#request.givenToEmployeeId, authentication))"
+    )
     @Operation(summary = "Give recognition")
     @PostMapping
     public ResponseEntity<RecognitionResponse> giveRecognition(

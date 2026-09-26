@@ -125,7 +125,10 @@ public class ExpenseController {
         return ResponseEntity.ok(expenseService.getPendingApprovals(pageable));
     }
 
-    @PreAuthorize("hasAuthority('EXPENSE_MANAGE')")
+    @PreAuthorize(
+            "hasAnyAuthority('EXPENSE_MANAGE', 'EXPENSE_APPROVE') and " +
+                    "@expenseAuthorizationService.canApproveClaim(#claimId, authentication)"
+    )
     @Operation(summary = "Approve claim")
     @PatchMapping("/claims/{claimId}/approve")
     public ResponseEntity<ExpenseClaimResponse> approveClaim(
@@ -137,7 +140,10 @@ public class ExpenseController {
         return ResponseEntity.ok(expenseService.approveClaim(claimId, userDetails.getUserId()));
     }
 
-    @PreAuthorize("hasAuthority('EXPENSE_MANAGE')")
+    @PreAuthorize(
+            "hasAnyAuthority('EXPENSE_MANAGE', 'EXPENSE_APPROVE') and " +
+                    "@expenseAuthorizationService.canApproveClaim(#claimId, authentication)"
+    )
     @Operation(summary = "Reject claim")
     @PatchMapping("/claims/{claimId}/reject")
     public ResponseEntity<ExpenseClaimResponse> rejectClaim(

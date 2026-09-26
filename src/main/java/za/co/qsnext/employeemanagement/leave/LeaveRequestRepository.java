@@ -46,4 +46,9 @@ public interface LeaveRequestRepository
             @Param("from") LocalDate from,
             @Param("to") LocalDate to
     );
+
+    List<LeaveRequest> findByEmployeeIdInAndStatusOrderByStartDateAsc(
+            List<UUID> employeeIds,
+            String status
+    );
 }

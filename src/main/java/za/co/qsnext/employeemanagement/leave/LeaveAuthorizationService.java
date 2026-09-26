@@ -38,4 +38,20 @@ public class LeaveAuthorizationService {
                 .map(employeeId -> employeeAuthorizationService.canRead(employeeId, authentication))
                 .orElse(true);
     }
+
+    public boolean canActOnRequest(UUID leaveRequestId, Authentication authentication) {
+
+        return leaveRequestRepository.findById(leaveRequestId)
+                .map(LeaveRequest::getEmployeeId)
+                .map(employeeId -> employeeAuthorizationService.canActFor(employeeId, authentication))
+                .orElse(true);
+    }
+
+    public boolean canApproveRequest(UUID leaveRequestId, Authentication authentication) {
+
+        return leaveRequestRepository.findById(leaveRequestId)
+                .map(LeaveRequest::getEmployeeId)
+                .map(employeeId -> employeeAuthorizationService.canApproveFor(employeeId, authentication))
+                .orElse(true);
+    }
 }

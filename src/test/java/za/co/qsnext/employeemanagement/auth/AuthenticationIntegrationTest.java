@@ -290,9 +290,9 @@ class AuthenticationIntegrationTest extends AbstractIntegrationTest {
         String refreshToken = loginBody.get("refreshToken").asText();
 
         // Sanity: the freshly issued access token authenticates successfully.
-        mockMvc.perform(get("/api/v1/departments/{id}", UUID.randomUUID())
+        mockMvc.perform(get("/api/v1/auth/me")
                         .header("Authorization", "Bearer " + accessToken))
-                .andExpect(status().isNotFound());
+                .andExpect(status().isOk());
 
         mockMvc.perform(post("/api/v1/auth/logout")
                         .header("Authorization", "Bearer " + accessToken)
@@ -334,9 +334,9 @@ class AuthenticationIntegrationTest extends AbstractIntegrationTest {
         String accessToken = loginBody.get("accessToken").asText();
 
         // Sanity: the token authenticates successfully before the account is locked.
-        mockMvc.perform(get("/api/v1/departments/{id}", UUID.randomUUID())
+        mockMvc.perform(get("/api/v1/auth/me")
                         .header("Authorization", "Bearer " + accessToken))
-                .andExpect(status().isNotFound());
+                .andExpect(status().isOk());
 
         LoginRequest badLogin = new LoginRequest("cachebust.user", "WrongPassword!");
 

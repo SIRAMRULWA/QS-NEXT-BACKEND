@@ -15,6 +15,7 @@ public record MeResponse(
         UUID userId,
         String username,
         String email,
+        boolean emailVerified,
         UUID employeeId,
         List<String> roles,
         List<String> authorities

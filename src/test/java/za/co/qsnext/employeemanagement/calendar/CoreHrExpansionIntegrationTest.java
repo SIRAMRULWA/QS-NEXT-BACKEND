@@ -74,9 +74,15 @@ class CoreHrExpansionIntegrationTest extends AbstractIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[?(@.title == 'Founders Day')]").exists());
 
-        // Directory: the employee can find their own profile with the department name resolved.
+        // Directory: employees no longer browse colleagues; HR finds the
+        // employee with the department name resolved.
         mockMvc.perform(get("/api/v1/directory/employees")
                         .header("Authorization", "Bearer " + employeeToken)
+                        .param("query", "hr5"))
+                .andExpect(status().isForbidden());
+
+        mockMvc.perform(get("/api/v1/directory/employees")
+                        .header("Authorization", "Bearer " + adminToken)
                         .param("query", "hr5"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.content[?(@.id == '" + employeeId + "')].departmentName")

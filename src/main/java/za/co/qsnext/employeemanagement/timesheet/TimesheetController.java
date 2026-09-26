@@ -44,7 +44,10 @@ public class TimesheetController {
         );
     }
 
-    @PreAuthorize("hasAuthority('TIMESHEET_CREATE')")
+    @PreAuthorize(
+            "hasAuthority('TIMESHEET_CREATE') and " +
+                    "@employeeAuthorizationService.canActFor(#request.employeeId, authentication)"
+    )
     @Operation(summary = "Create")
     @PostMapping
     public ResponseEntity<TimesheetResponse> create(
@@ -65,7 +68,10 @@ public class TimesheetController {
                 );
     }
 
-    @PreAuthorize("hasAuthority('TIMESHEET_ENTRY_CREATE')")
+    @PreAuthorize(
+            "hasAuthority('TIMESHEET_ENTRY_CREATE') and " +
+                    "@timesheetAuthorizationService.canActOnTimesheet(#timesheetId, authentication)"
+    )
     @Operation(summary = "Add entry")
     @PostMapping("/{timesheetId}/entries")
     public ResponseEntity<Void> addEntry(
@@ -85,7 +91,10 @@ public class TimesheetController {
                 .build();
     }
 
-    @PreAuthorize("hasAuthority('TIMESHEET_SUBMIT')")
+    @PreAuthorize(
+            "hasAuthority('TIMESHEET_SUBMIT') and " +
+                    "@timesheetAuthorizationService.canActOnTimesheet(#timesheetId, authentication)"
+    )
     @Operation(summary = "Submit")
     @PostMapping("/{timesheetId}/submit")
     public ResponseEntity<TimesheetResponse> submit(
@@ -99,7 +108,10 @@ public class TimesheetController {
         );
     }
 
-    @PreAuthorize("hasAuthority('TIMESHEET_APPROVE')")
+    @PreAuthorize(
+            "hasAuthority('TIMESHEET_APPROVE') and " +
+                    "@timesheetAuthorizationService.canApproveTimesheet(#timesheetId, authentication)"
+    )
     @Operation(summary = "Approve")
     @PostMapping("/{timesheetId}/approve")
     public ResponseEntity<TimesheetResponse> approve(
@@ -119,7 +131,10 @@ public class TimesheetController {
         );
     }
 
-    @PreAuthorize("hasAuthority('TIMESHEET_REJECT')")
+    @PreAuthorize(
+            "hasAuthority('TIMESHEET_REJECT') and " +
+                    "@timesheetAuthorizationService.canApproveTimesheet(#timesheetId, authentication)"
+    )
     @Operation(summary = "Reject")
     @PostMapping("/{timesheetId}/reject")
     public ResponseEntity<TimesheetResponse> reject(

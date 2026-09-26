@@ -38,4 +38,12 @@ public class AttendanceAuthorizationService {
                 .map(employeeId -> employeeAuthorizationService.canRead(employeeId, authentication))
                 .orElse(true);
     }
+
+    public boolean canActOnRecord(UUID attendanceId, Authentication authentication) {
+
+        return attendanceRepository.findById(attendanceId)
+                .map(Attendance::getEmployeeId)
+                .map(employeeId -> employeeAuthorizationService.canActFor(employeeId, authentication))
+                .orElse(true);
+    }
 }

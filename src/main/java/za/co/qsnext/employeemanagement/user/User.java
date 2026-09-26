@@ -62,6 +62,12 @@ public class User {
     private boolean enabled = true;
 
     @Column(
+            name = "email_verified",
+            nullable = false
+    )
+    private boolean emailVerified = true;
+
+    @Column(
             name = "failed_login_attempts",
             nullable = false
     )
@@ -211,5 +217,17 @@ public class User {
 
     public void disable() {
         this.enabled = false;
+    }
+
+    public boolean isEmailVerified() {
+        return emailVerified;
+    }
+
+    public void requireEmailVerification() {
+        this.emailVerified = false;
+    }
+
+    public void markEmailVerified() {
+        this.emailVerified = true;
     }
 }

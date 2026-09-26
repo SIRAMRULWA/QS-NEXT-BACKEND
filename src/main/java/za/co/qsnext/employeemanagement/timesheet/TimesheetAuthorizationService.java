@@ -38,4 +38,20 @@ public class TimesheetAuthorizationService {
                 .map(employeeId -> employeeAuthorizationService.canRead(employeeId, authentication))
                 .orElse(true);
     }
+
+    public boolean canActOnTimesheet(UUID timesheetId, Authentication authentication) {
+
+        return timesheetRepository.findById(timesheetId)
+                .map(Timesheet::getEmployeeId)
+                .map(employeeId -> employeeAuthorizationService.canActFor(employeeId, authentication))
+                .orElse(true);
+    }
+
+    public boolean canApproveTimesheet(UUID timesheetId, Authentication authentication) {
+
+        return timesheetRepository.findById(timesheetId)
+                .map(Timesheet::getEmployeeId)
+                .map(employeeId -> employeeAuthorizationService.canApproveFor(employeeId, authentication))
+                .orElse(true);
+    }
 }
