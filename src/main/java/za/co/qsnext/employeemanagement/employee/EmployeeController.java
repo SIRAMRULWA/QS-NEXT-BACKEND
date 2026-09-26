@@ -15,7 +15,9 @@ import org.springframework.web.bind.annotation.*;
 
 import za.co.qsnext.employeemanagement.employee.dto.CreateEmployeeRequest;
 import za.co.qsnext.employeemanagement.employee.dto.EmployeeResponse;
+import za.co.qsnext.employeemanagement.employee.dto.InviteEmployeeRequest;
 import za.co.qsnext.employeemanagement.employee.dto.UpdateEmployeeRequest;
+import za.co.qsnext.employeemanagement.onboarding.OnboardingService;
 
 import java.util.UUID;
 
@@ -25,9 +27,17 @@ import java.util.UUID;
 public class EmployeeController {
 
     private final EmployeeService employeeService;
+    private final EmployeeInvitationService employeeInvitationService;
+    private final OnboardingService onboardingService;
 
-    public EmployeeController(EmployeeService employeeService) {
+    public EmployeeController(
+            EmployeeService employeeService,
+            EmployeeInvitationService employeeInvitationService,
+            OnboardingService onboardingService
+    ) {
         this.employeeService = employeeService;
+        this.employeeInvitationService = employeeInvitationService;
+        this.onboardingService = onboardingService;
     }
 
     @PreAuthorize(
@@ -137,6 +147,18 @@ public class EmployeeController {
     }
 
     @PreAuthorize("hasAuthority('EMPLOYEE_CREATE')")
+    @Operation(summary = "Invite a staff member")
+    @PostMapping("/invite")
+    public ResponseEntity<EmployeeResponse> invite(
+            @Valid @RequestBody InviteEmployeeRequest request
+    ) {
+
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(EmployeeResponse.from(employeeInvitationService.invite(request)));
+    }
+
+    @PreAuthorize("hasAuthority('EMPLOYEE_CREATE')")
     @Operation(summary = "Create")
     @PostMapping
     public ResponseEntity<EmployeeResponse> create(
@@ -190,7 +212,8 @@ public class EmployeeController {
     @PatchMapping("/{employeeId}/status")
     public ResponseEntity<EmployeeResponse> changeStatus(
             @PathVariable UUID employeeId,
-            @RequestParam String status
+            @RequestParam String status,
+            @RequestParam(required = false) UUID exitChecklistTemplateId
     ) {
 
         Employee employee =
@@ -198,6 +221,12 @@ public class EmployeeController {
                         employeeId,
                         status
                 );
+
+        // An optional exit checklist (an onboarding template HR keeps for
+        // leavers) is started when someone is terminated.
+        if (exitChecklistTemplateId != null && "TERMINATED".equals(status)) {
+            onboardingService.startWorkflow(employeeId, exitChecklistTemplateId);
+        }
 
         return ResponseEntity.ok(
                 EmployeeResponse.from(employee)

@@ -59,6 +59,8 @@ public class AuthService {
 
     private static final String TOKEN_TYPE = "Bearer";
     private static final String DEFAULT_ROLE = "APPLICANT";
+
+    private static final Duration INVITATION_TOKEN_LIFETIME = Duration.ofDays(7);
     private static final String ENTITY_TYPE_USER = "USER";
 
     private final UserRepository userRepository;
@@ -74,6 +76,7 @@ public class AuthService {
     private final EmailService emailService;
     private final AuditService auditService;
     private final TokenRevocationService tokenRevocationService;
+    private final EmailVerificationService emailVerificationService;
     private final ClientIpResolver clientIpResolver;
 
     private final int maxFailedLoginAttempts;
@@ -94,6 +97,7 @@ public class AuthService {
             EmailService emailService,
             AuditService auditService,
             TokenRevocationService tokenRevocationService,
+            EmailVerificationService emailVerificationService,
             ClientIpResolver clientIpResolver,
             @Value("${security.auth.max-failed-login-attempts}") int maxFailedLoginAttempts,
             @Value("${security.auth.account-lock-duration-minutes}") long accountLockDurationMinutes,
@@ -112,6 +116,7 @@ public class AuthService {
         this.emailService = emailService;
         this.auditService = auditService;
         this.tokenRevocationService = tokenRevocationService;
+        this.emailVerificationService = emailVerificationService;
         this.clientIpResolver = clientIpResolver;
         this.maxFailedLoginAttempts = maxFailedLoginAttempts;
         this.accountLockDuration = Duration.ofMinutes(accountLockDurationMinutes);
@@ -250,9 +255,12 @@ public class AuthService {
         );
 
         user.assignRole(applicantRole);
+        user.requireEmailVerification();
 
         User savedUser =
                 userRepository.save(user);
+
+        emailVerificationService.sendVerification(savedUser);
 
         emailService.queueEmail(
                 EmailTemplate.WELCOME,
@@ -470,6 +478,7 @@ public class AuthService {
                 user.getId(),
                 user.getUsername(),
                 user.getEmail(),
+                user.isEmailVerified(),
                 employeeId,
                 roles,
                 authorities
@@ -518,6 +527,35 @@ public class AuthService {
                 ENTITY_TYPE_USER,
                 user.getId(),
                 AuditService.RESULT_SUCCESS
+        );
+    }
+
+    /**
+     * Emails an HR-created account its username and a one-time code to set
+     * its first password, reusing the password-reset token mechanism.
+     */
+    @Transactional
+    public void sendInvitation(User user, String firstName) {
+
+        String rawToken = generateSecureToken();
+
+        passwordResetTokenRepository.save(
+                new PasswordResetToken(
+                        user.getId(),
+                        hashToken(rawToken),
+                        OffsetDateTime.now().plus(INVITATION_TOKEN_LIFETIME)
+                )
+        );
+
+        emailService.queueEmail(
+                EmailTemplate.EMPLOYEE_INVITATION,
+                user.getEmail(),
+                Map.of(
+                        "firstName", firstName,
+                        "username", user.getUsername(),
+                        "token", rawToken,
+                        "expiresInMinutes", String.valueOf(INVITATION_TOKEN_LIFETIME.toMinutes())
+                )
         );
     }
 

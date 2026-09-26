@@ -21,11 +21,14 @@ import za.co.qsnext.employeemanagement.security.CustomUserDetails;
 public class AuthController {
 
     private final AuthService authService;
+    private final EmailVerificationService emailVerificationService;
 
     public AuthController(
-            AuthService authService
+            AuthService authService,
+            EmailVerificationService emailVerificationService
     ) {
         this.authService = authService;
+        this.emailVerificationService = emailVerificationService;
     }
 
     @Operation(summary = "Login")
@@ -54,6 +57,32 @@ public class AuthController {
                 .body(
                         authService.register(request, httpRequest)
                 );
+    }
+
+    @Operation(summary = "Verify email address")
+    @SecurityRequirements
+    @PostMapping("/verify-email")
+    public ResponseEntity<Void> verifyEmail(
+            @Valid @RequestBody VerifyEmailRequest request
+    ) {
+
+        emailVerificationService.verify(request.token());
+
+        return ResponseEntity.noContent().build();
+    }
+
+    @Operation(summary = "Resend email verification")
+    @PostMapping("/resend-verification")
+    public ResponseEntity<Void> resendVerification(
+            Authentication authentication
+    ) {
+
+        CustomUserDetails userDetails =
+                (CustomUserDetails) authentication.getPrincipal();
+
+        emailVerificationService.resend(userDetails.getUserId());
+
+        return ResponseEntity.noContent().build();
     }
 
     @Operation(summary = "Refresh")

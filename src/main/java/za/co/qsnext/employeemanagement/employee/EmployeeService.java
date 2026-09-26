@@ -8,6 +8,8 @@ import za.co.qsnext.employeemanagement.department.DepartmentService;
 import za.co.qsnext.employeemanagement.exception.BusinessRuleException;
 import za.co.qsnext.employeemanagement.exception.DuplicateResourceException;
 import za.co.qsnext.employeemanagement.exception.EmployeeNotFoundException;
+import za.co.qsnext.employeemanagement.auth.RefreshTokenService;
+import za.co.qsnext.employeemanagement.user.User;
 import za.co.qsnext.employeemanagement.user.UserService;
 
 import java.time.LocalDate;
@@ -19,18 +21,26 @@ public class EmployeeService {
 
     private final EmployeeRepository employeeRepository;
     private static final String MANAGER_ROLE = "MANAGER";
+    private static final String EMPLOYEE_ROLE = "EMPLOYEE";
+    private static final String APPLICANT_ROLE = "APPLICANT";
+    private static final String ACTIVE = "ACTIVE";
+    private static final String SUSPENDED = "SUSPENDED";
+    private static final String TERMINATED = "TERMINATED";
 
     private final UserService userService;
+    private final RefreshTokenService refreshTokenService;
     private final DepartmentService departmentService;
 
     public EmployeeService(
             EmployeeRepository employeeRepository,
             UserService userService,
-            DepartmentService departmentService
+            DepartmentService departmentService,
+            RefreshTokenService refreshTokenService
     ) {
         this.employeeRepository = employeeRepository;
         this.userService = userService;
         this.departmentService = departmentService;
+        this.refreshTokenService = refreshTokenService;
     }
 
     public Employee getById(UUID employeeId) {
@@ -90,7 +100,7 @@ public class EmployeeService {
     ) {
 
         // Verify referenced user exists.
-        userService.getById(userId);
+        User user = userService.getById(userId);
 
         // Verify referenced department exists.
         departmentService.getById(departmentId);
@@ -120,7 +130,17 @@ public class EmployeeService {
                 hireDate
         );
 
-        return employeeRepository.save(employee);
+        Employee saved = employeeRepository.save(employee);
+
+        // Linking a login to an employee record is what makes it an
+        // employee; an applicant stops being an applicant at that point.
+        userService.assignRole(userId, EMPLOYEE_ROLE);
+
+        if (user != null && user.hasRole(APPLICANT_ROLE)) {
+            userService.removeRole(userId, APPLICANT_ROLE);
+        }
+
+        return saved;
     }
 
     @Transactional
@@ -158,6 +178,16 @@ public class EmployeeService {
         Employee employee = getById(employeeId);
 
         employee.changeStatus(employmentStatus);
+
+        // Offboarding: a terminated or suspended employee can no longer
+        // sign in, and every session they have open is ended. Reactivating
+        // them restores access.
+        if (TERMINATED.equals(employmentStatus) || SUSPENDED.equals(employmentStatus)) {
+            userService.disable(employee.getUserId());
+            refreshTokenService.revokeAllActiveForUser(employee.getUserId());
+        } else if (ACTIVE.equals(employmentStatus)) {
+            userService.enable(employee.getUserId());
+        }
 
         return employee;
     }

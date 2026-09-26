@@ -25,6 +25,23 @@ public enum EmailTemplate {
                     + "You can now sign in to access the employee portal."
     ),
 
+    VERIFY_EMAIL(
+            "VERIFY_EMAIL",
+            "Confirm your QSNext email address",
+            "Hi {{username}}, please confirm your email address so you can apply "
+                    + "for jobs. Your verification code is: {{token}}. It expires in "
+                    + "{{expiresInHours}} hours. If you did not create this account, "
+                    + "you can ignore this email."
+    ),
+
+    EMPLOYEE_INVITATION(
+            "EMPLOYEE_INVITATION",
+            "You have been invited to QSNext",
+            "Hi {{firstName}}, HR has created your QSNext employee account with the "
+                    + "username {{username}}. Use this code to set your password: "
+                    + "{{token}}. It expires in {{expiresInMinutes}} minutes."
+    ),
+
     ACCOUNT_LOCKED(
             "ACCOUNT_LOCKED",
             "Your QSNext account has been locked",
