@@ -35,4 +35,6 @@ public interface ExpenseClaimRepository extends JpaRepository<ExpenseClaim, UUID
             and c.expenseDate between :from and :to
             """)
     ExpenseTrendSummary summarizeForPeriod(@Param("from") LocalDate from, @Param("to") LocalDate to);
+
+    List<ExpenseClaim> findByEmployeeIdInAndStatusOrderByExpenseDateAsc(List<UUID> employeeIds, String status);
 }

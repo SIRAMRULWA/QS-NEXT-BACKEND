@@ -91,7 +91,10 @@ public class LeaveController {
         );
     }
 
-    @PreAuthorize("hasAuthority('LEAVE_CREATE')")
+    @PreAuthorize(
+            "hasAuthority('LEAVE_CREATE') and " +
+                    "@employeeAuthorizationService.canActFor(#request.employeeId, authentication)"
+    )
     @Operation(summary = "Create")
     @PostMapping
     public ResponseEntity<LeaveResponse> create(
@@ -114,7 +117,10 @@ public class LeaveController {
                 );
     }
 
-    @PreAuthorize("hasAuthority('LEAVE_APPROVE')")
+    @PreAuthorize(
+            "hasAuthority('LEAVE_APPROVE') and " +
+                    "@leaveAuthorizationService.canApproveRequest(#leaveRequestId, authentication)"
+    )
     @Operation(summary = "Approve")
     @PostMapping("/{leaveRequestId}/approve")
     public ResponseEntity<LeaveResponse> approve(
@@ -135,7 +141,10 @@ public class LeaveController {
         );
     }
 
-    @PreAuthorize("hasAuthority('LEAVE_REJECT')")
+    @PreAuthorize(
+            "hasAuthority('LEAVE_REJECT') and " +
+                    "@leaveAuthorizationService.canApproveRequest(#leaveRequestId, authentication)"
+    )
     @Operation(summary = "Reject")
     @PostMapping("/{leaveRequestId}/reject")
     public ResponseEntity<LeaveResponse> reject(
@@ -149,7 +158,10 @@ public class LeaveController {
         );
     }
 
-    @PreAuthorize("hasAuthority('LEAVE_CANCEL')")
+    @PreAuthorize(
+            "hasAuthority('LEAVE_CANCEL') and " +
+                    "@leaveAuthorizationService.canActOnRequest(#leaveRequestId, authentication)"
+    )
     @Operation(summary = "Cancel")
     @PostMapping("/{leaveRequestId}/cancel")
     public ResponseEntity<LeaveResponse> cancel(
@@ -183,7 +195,7 @@ public class LeaveController {
         );
     }
 
-    @PreAuthorize("hasAuthority('LEAVE_CREATE')")
+    @PreAuthorize("hasAuthority('LEAVE_ALLOCATE')")
     @Operation(summary = "Create balance")
     @PostMapping("/balances")
     public ResponseEntity<LeaveBalanceResponse> createBalance(

@@ -58,7 +58,7 @@ import java.util.UUID;
 public class AuthService {
 
     private static final String TOKEN_TYPE = "Bearer";
-    private static final String DEFAULT_ROLE = "EMPLOYEE";
+    private static final String DEFAULT_ROLE = "APPLICANT";
     private static final String ENTITY_TYPE_USER = "USER";
 
     private final UserRepository userRepository;
@@ -230,11 +230,11 @@ public class AuthService {
             );
         }
 
-        Role employeeRole =
+        Role applicantRole =
                 roleRepository.findByName(DEFAULT_ROLE)
                         .orElseThrow(() ->
                                 new IllegalStateException(
-                                        "EMPLOYEE role is not configured"
+                                        "APPLICANT role is not configured"
                                 )
                         );
 
@@ -249,7 +249,7 @@ public class AuthService {
                 passwordHash
         );
 
-        user.assignRole(employeeRole);
+        user.assignRole(applicantRole);
 
         User savedUser =
                 userRepository.save(user);

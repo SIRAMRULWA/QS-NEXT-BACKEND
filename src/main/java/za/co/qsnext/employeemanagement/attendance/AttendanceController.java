@@ -90,7 +90,10 @@ public class AttendanceController {
                 );
     }
 
-    @PreAuthorize("hasAuthority('ATTENDANCE_CLOCK_IN')")
+    @PreAuthorize(
+            "hasAuthority('ATTENDANCE_CLOCK_IN') and " +
+                    "@attendanceAuthorizationService.canActOnRecord(#attendanceId, authentication)"
+    )
     @Operation(summary = "Clock in")
     @PostMapping("/{attendanceId}/clock-in")
     public ResponseEntity<AttendanceResponse> clockIn(
@@ -106,7 +109,10 @@ public class AttendanceController {
         );
     }
 
-    @PreAuthorize("hasAuthority('ATTENDANCE_CLOCK_OUT')")
+    @PreAuthorize(
+            "hasAuthority('ATTENDANCE_CLOCK_OUT') and " +
+                    "@attendanceAuthorizationService.canActOnRecord(#attendanceId, authentication)"
+    )
     @Operation(summary = "Clock out")
     @PostMapping("/{attendanceId}/clock-out")
     public ResponseEntity<AttendanceResponse> clockOut(

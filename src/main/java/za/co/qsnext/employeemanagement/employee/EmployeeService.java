@@ -18,6 +18,8 @@ import java.util.UUID;
 public class EmployeeService {
 
     private final EmployeeRepository employeeRepository;
+    private static final String MANAGER_ROLE = "MANAGER";
+
     private final UserService userService;
     private final DepartmentService departmentService;
 
@@ -206,6 +208,13 @@ public class EmployeeService {
         }
 
         employee.assignManager(managerId);
+
+        // A manager needs the MANAGER role to see and approve their
+        // reports' requests; grant it the moment they get a report.
+        if (managerId != null) {
+            employeeRepository.findById(managerId)
+                    .ifPresent(manager -> userService.assignRole(manager.getUserId(), MANAGER_ROLE));
+        }
 
         return employee;
     }

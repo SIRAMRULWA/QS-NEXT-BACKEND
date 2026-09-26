@@ -57,4 +57,9 @@ public interface TimesheetRepository
             LocalDate from,
             LocalDate to
     );
+
+    List<Timesheet> findByEmployeeIdInAndStatusOrderByPeriodStartAsc(
+            List<UUID> employeeIds,
+            String status
+    );
 }

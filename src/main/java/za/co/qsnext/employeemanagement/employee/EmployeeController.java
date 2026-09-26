@@ -30,7 +30,9 @@ public class EmployeeController {
         this.employeeService = employeeService;
     }
 
-    @PreAuthorize("hasAuthority('EMPLOYEE_READ')")
+    @PreAuthorize(
+            "hasAuthority('EMPLOYEE_READ') and @employeeAuthorizationService.canManage(authentication)"
+    )
     @Operation(summary = "Get all")
     @GetMapping
     public ResponseEntity<Page<EmployeeResponse>> getAll(
@@ -65,7 +67,9 @@ public class EmployeeController {
         );
     }
 
-    @PreAuthorize("hasAuthority('EMPLOYEE_READ')")
+    @PreAuthorize(
+            "hasAuthority('EMPLOYEE_READ') and @employeeAuthorizationService.canManage(authentication)"
+    )
     @Operation(summary = "Get by department")
     @GetMapping("/department/{departmentId}")
     public ResponseEntity<Page<EmployeeResponse>> getByDepartment(
@@ -87,7 +91,9 @@ public class EmployeeController {
         return ResponseEntity.ok(response);
     }
 
-    @PreAuthorize("hasAuthority('EMPLOYEE_READ')")
+    @PreAuthorize(
+            "hasAuthority('EMPLOYEE_READ') and @employeeAuthorizationService.canManage(authentication)"
+    )
     @Operation(summary = "Get by status")
     @GetMapping("/status/{status}")
     public ResponseEntity<Page<EmployeeResponse>> getByStatus(
@@ -106,7 +112,9 @@ public class EmployeeController {
         return ResponseEntity.ok(response);
     }
 
-    @PreAuthorize("hasAuthority('EMPLOYEE_READ')")
+    @PreAuthorize(
+            "hasAuthority('EMPLOYEE_READ') and @employeeAuthorizationService.canManage(authentication)"
+    )
     @Operation(summary = "Search")
     @GetMapping("/search")
     public ResponseEntity<Page<EmployeeResponse>> search(
