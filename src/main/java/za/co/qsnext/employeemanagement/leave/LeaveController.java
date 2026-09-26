@@ -18,8 +18,11 @@ import org.springframework.web.bind.annotation.*;
 import za.co.qsnext.employeemanagement.leave.dto.CreateLeaveRequest;
 import za.co.qsnext.employeemanagement.leave.dto.LeaveBalanceResponse;
 import za.co.qsnext.employeemanagement.leave.dto.LeaveResponse;
+import za.co.qsnext.employeemanagement.leave.dto.UpdateLeaveBalanceRequest;
 import za.co.qsnext.employeemanagement.security.CustomUserDetails;
 
+import java.time.LocalDate;
+import java.util.List;
 import java.util.UUID;
 
 @Tag(name = "Leave", description = "Leave requests, approvals and balances.")
@@ -191,6 +194,55 @@ public class LeaveController {
                 Sort.by(
                         Sort.Direction.DESC,
                         "createdAt"
+                )
+        );
+    }
+
+    @PreAuthorize("hasAuthority('LEAVE_READ')")
+    @Operation(summary = "My leave balances")
+    @GetMapping("/my-balances")
+    public ResponseEntity<List<LeaveBalanceResponse>> getMyBalances(
+            Authentication authentication,
+            @RequestParam(required = false) Integer year
+    ) {
+
+        CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
+
+        return ResponseEntity.ok(
+                leaveService.getOwnLeaveBalances(
+                        userDetails.getUserId(),
+                        year == null ? LocalDate.now().getYear() : year
+                )
+        );
+    }
+
+    @PreAuthorize("hasAuthority('LEAVE_ALLOCATE')")
+    @Operation(summary = "List balances")
+    @GetMapping("/balances")
+    public ResponseEntity<List<LeaveBalanceResponse>> getBalances(
+            @RequestParam(required = false) UUID employeeId,
+            @RequestParam(required = false) Integer year
+    ) {
+
+        return ResponseEntity.ok(
+                leaveService.getBalances(
+                        employeeId,
+                        year == null ? LocalDate.now().getYear() : year
+                )
+        );
+    }
+
+    @PreAuthorize("hasAuthority('LEAVE_ALLOCATE')")
+    @Operation(summary = "Adjust balance")
+    @PatchMapping("/balances/{balanceId}")
+    public ResponseEntity<LeaveBalanceResponse> updateBalance(
+            @PathVariable UUID balanceId,
+            @Valid @RequestBody UpdateLeaveBalanceRequest request
+    ) {
+
+        return ResponseEntity.ok(
+                LeaveBalanceResponse.from(
+                        leaveService.updateAllocatedDays(balanceId, request.allocatedDays())
                 )
         );
     }

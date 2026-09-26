@@ -115,13 +115,13 @@ WHERE ur.role_id = '00000000-0000-0000-0000-000000000004'
 
 -- Anyone who is already someone's manager gets MANAGER.
 INSERT INTO user_roles (user_id, role_id)
-SELECT DISTINCT m.user_id, '00000000-0000-0000-0000-000000000006'
+SELECT DISTINCT m.user_id, '00000000-0000-0000-0000-000000000006'::uuid
 FROM employees m
 WHERE EXISTS (SELECT 1 FROM employees e WHERE e.manager_id = m.id)
 ON CONFLICT DO NOTHING;
 
 -- Anyone already assigned to an interview gets INTERVIEWER.
 INSERT INTO user_roles (user_id, role_id)
-SELECT DISTINCT i.interviewer_user_id, '00000000-0000-0000-0000-000000000007'
+SELECT DISTINCT i.interviewer_user_id, '00000000-0000-0000-0000-000000000007'::uuid
 FROM interviews i
 ON CONFLICT DO NOTHING;

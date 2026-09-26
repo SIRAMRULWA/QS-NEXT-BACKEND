@@ -152,4 +152,12 @@ public class LeaveBalance {
     public void allocateAdditionalDays(BigDecimal days) {
         this.allocatedDays = this.allocatedDays.add(days);
     }
+
+    /**
+     * HR correction of the days granted for the year. It can't drop below
+     * what the employee has already used.
+     */
+    public void setAllocatedDays(BigDecimal days) {
+        this.allocatedDays = days;
+    }
 }

@@ -109,7 +109,8 @@ class LearningPerformanceRecognitionIntegrationTest extends AbstractIntegrationT
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("COMPLETED"));
 
-        // Recognition: the employee gives their manager peer recognition.
+        // Recognition: an employee no longer picks colleagues to recognize;
+        // their manager recognizes them.
         UUID typeId = createRecognitionType(adminToken);
 
         mockMvc.perform(post("/api/v1/recognition")
@@ -118,10 +119,18 @@ class LearningPerformanceRecognitionIntegrationTest extends AbstractIntegrationT
                         .content("""
                                 {"typeId":"%s","givenToEmployeeId":"%s","message":"Thanks for the support!"}
                                 """.formatted(typeId, managerId)))
+                .andExpect(status().isForbidden());
+
+        mockMvc.perform(post("/api/v1/recognition")
+                        .header("Authorization", "Bearer " + managerToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"typeId":"%s","givenToEmployeeId":"%s","message":"Great work this quarter!"}
+                                """.formatted(typeId, employeeId)))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.points").value(15));
 
-        mockMvc.perform(get("/api/v1/recognition/employees/{id}/points-total", managerId)
+        mockMvc.perform(get("/api/v1/recognition/employees/{id}/points-total", employeeId)
                         .header("Authorization", "Bearer " + adminToken))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$").value(15));

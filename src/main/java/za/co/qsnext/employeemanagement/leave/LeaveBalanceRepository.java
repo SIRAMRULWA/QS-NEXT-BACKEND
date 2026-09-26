@@ -20,4 +20,6 @@ public interface LeaveBalanceRepository
             UUID employeeId,
             Integer leaveYear
     );
+
+    List<LeaveBalance> findByLeaveYearOrderByEmployeeIdAscLeaveTypeAsc(Integer leaveYear);
 }

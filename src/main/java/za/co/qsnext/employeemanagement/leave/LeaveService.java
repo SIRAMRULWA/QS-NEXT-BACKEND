@@ -396,4 +396,37 @@ public class LeaveService {
                 )
         );
     }
+
+    @Transactional(readOnly = true)
+    public List<LeaveBalanceResponse> getBalances(UUID employeeId, Integer leaveYear) {
+
+        List<LeaveBalance> balances = employeeId == null
+                ? leaveBalanceRepository.findByLeaveYearOrderByEmployeeIdAscLeaveTypeAsc(leaveYear)
+                : leaveBalanceRepository.findByEmployeeIdAndLeaveYear(employeeId, leaveYear);
+
+        return balances.stream()
+                .map(LeaveBalanceResponse::from)
+                .toList();
+    }
+
+    @Transactional
+    public LeaveBalance updateAllocatedDays(UUID balanceId, BigDecimal allocatedDays) {
+
+        LeaveBalance balance = leaveBalanceRepository.findById(balanceId)
+                .orElseThrow(() -> new BusinessRuleException("Leave balance not found"));
+
+        if (allocatedDays == null || allocatedDays.compareTo(BigDecimal.ZERO) < 0) {
+            throw new BusinessRuleException("Allocated leave days cannot be negative");
+        }
+
+        if (allocatedDays.compareTo(balance.getUsedDays()) < 0) {
+            throw new BusinessRuleException(
+                    "Allocated days cannot be less than the " + balance.getUsedDays() + " days already used"
+            );
+        }
+
+        balance.setAllocatedDays(allocatedDays);
+
+        return balance;
+    }
 }
