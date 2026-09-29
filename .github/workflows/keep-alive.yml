@@ -1,5 +1,10 @@
 name: Keep Render backend awake
 
+# Pings the liveness probe (the same one the Dockerfile HEALTHCHECK uses),
+# not the aggregate /actuator/health: the aggregate also includes optional
+# components such as mail, so it reports 503 DOWN while SMTP isn't
+# configured even though the app is up and serving requests.
+#
 # Render's free plan puts the web service to sleep after ~15 minutes
 # without traffic, and waking it takes about a minute - long enough for the
 # frontend's first request (usually sign-in) to fail with a network error.
@@ -27,7 +32,7 @@ jobs:
         run: |
           for attempt in 1 2 3; do
             code=$(curl -sS -o /dev/null -w '%{http_code}' --max-time 90 \
-              https://qs-next-backend.onrender.com/actuator/health || true)
+              https://qs-next-backend.onrender.com/actuator/health/liveness || true)
             echo "Attempt $attempt: HTTP $code"
             [ "$code" = "200" ] && exit 0
             sleep 10
