@@ -37,7 +37,7 @@ security:
   # Mirrors the production frontend origin so CorsIntegrationTest exercises
   # the same allowlist behaviour the deployed browser client depends on.
   cors:
-    allowed-origins: https://qsnext-technology-frontend.netlify.app
+    allowed-origins: https://qsnext-technology-frontend.netlify.app,https://dynamic-manatee-64d428.netlify.app
 
 # Fast retry/backoff so tests that exercise the retry -> DLQ path don't
 # have to wait out production-sized delays.

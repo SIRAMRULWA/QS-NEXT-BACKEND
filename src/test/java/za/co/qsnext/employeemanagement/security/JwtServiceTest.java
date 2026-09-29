@@ -68,7 +68,13 @@ class JwtServiceTest {
     @Test
     void extractUsername_throws_forATamperedToken() {
         String token = jwtService.generateAccessToken(UUID.randomUUID(), "jane.doe");
-        String tampered = token.substring(0, token.length() - 2) + "xx";
+        // Change the signature's first character: it encodes a full 6 bits of
+        // the signature, whereas the last base64url character carries padding
+        // bits, so rewriting the tail could leave the decoded signature (and
+        // the token's validity) unchanged.
+        int signatureStart = token.lastIndexOf('.') + 1;
+        char replacement = token.charAt(signatureStart) == 'A' ? 'B' : 'A';
+        String tampered = token.substring(0, signatureStart) + replacement + token.substring(signatureStart + 1);
 
         assertThatThrownBy(() -> jwtService.extractUsername(tampered))
                 .isInstanceOf(RuntimeException.class);
