@@ -7,6 +7,7 @@ import jakarta.servlet.http.HttpServletResponse;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -61,7 +62,10 @@ public class RateLimitFilter extends OncePerRequestFilter {
 
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
-        return !RATE_LIMITED_PATHS.contains(request.getRequestURI());
+        // CORS preflights carry no credentials and precede every real
+        // browser call, so counting them would halve the effective limit.
+        return HttpMethod.OPTIONS.matches(request.getMethod())
+                || !RATE_LIMITED_PATHS.contains(request.getRequestURI());
     }
 
     @Override
