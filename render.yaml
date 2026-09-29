@@ -141,7 +141,7 @@ services:
       # rather than as a dashboard-only `sync: false` entry. Append more
       # as a comma-separated list, e.g. ...,https://app.qsnext.co.za
       - key: CORS_ALLOWED_ORIGINS
-        value: https://qsnext-technology-frontend.netlify.app
+        value: https://qsnext-technology-frontend.netlify.app,https://dynamic-manatee-64d428.netlify.app
 
       # ------------------------------------------------------------
       # Application / production profile

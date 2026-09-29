@@ -36,6 +36,17 @@ class CorsIntegrationTest extends AbstractIntegrationTest {
     }
 
     @Test
+    void preflight_fromSecondNetlifySite_isAccepted() throws Exception {
+        String secondOrigin = "https://dynamic-manatee-64d428.netlify.app";
+        mockMvc.perform(options("/api/v1/auth/login")
+                        .header(HttpHeaders.ORIGIN, secondOrigin)
+                        .header(HttpHeaders.ACCESS_CONTROL_REQUEST_METHOD, "POST")
+                        .header(HttpHeaders.ACCESS_CONTROL_REQUEST_HEADERS, "content-type"))
+                .andExpect(status().isOk())
+                .andExpect(header().string(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN, secondOrigin));
+    }
+
+    @Test
     void preflight_fromAllowedOrigin_isAcceptedForAuthenticatedEndpoints() throws Exception {
         mockMvc.perform(options("/api/v1/auth/me")
                         .header(HttpHeaders.ORIGIN, FRONTEND_ORIGIN)
