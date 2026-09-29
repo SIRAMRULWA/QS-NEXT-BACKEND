@@ -34,6 +34,11 @@ security:
     max-requests: 100000
     window-seconds: 60
 
+  # Mirrors the production frontend origin so CorsIntegrationTest exercises
+  # the same allowlist behaviour the deployed browser client depends on.
+  cors:
+    allowed-origins: https://qsnext-technology-frontend.netlify.app
+
 # Fast retry/backoff so tests that exercise the retry -> DLQ path don't
 # have to wait out production-sized delays.
 email:
