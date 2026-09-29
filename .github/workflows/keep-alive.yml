@@ -1,0 +1,35 @@
+name: Keep Render backend awake
+
+# Render's free plan puts the web service to sleep after ~15 minutes
+# without traffic, and waking it takes about a minute - long enough for the
+# frontend's first request (usually sign-in) to fail with a network error.
+# Pinging the liveness endpoint every 10 minutes keeps it awake. One
+# always-on free service uses ~730 of the 750 free instance hours Render
+# grants per month, so this stays within the free allowance as long as it
+# is the only free service on the account.
+#
+# GitHub disables scheduled workflows after 60 days with no repository
+# activity; re-enable it from the Actions tab if that happens.
+
+on:
+  schedule:
+    - cron: '*/10 * * * *'
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Ping backend health
+        run: |
+          for attempt in 1 2 3; do
+            code=$(curl -sS -o /dev/null -w '%{http_code}' --max-time 90 \
+              https://qs-next-backend.onrender.com/actuator/health || true)
+            echo "Attempt $attempt: HTTP $code"
+            [ "$code" = "200" ] && exit 0
+            sleep 10
+          done
+          echo "::warning::Backend did not report healthy after 3 attempts"
